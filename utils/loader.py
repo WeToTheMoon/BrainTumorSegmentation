@@ -1,5 +1,5 @@
 import numpy as np
-from utils.augmentations import combine_aug
+from utils.augmentations import combine_aug, binary_combine_aug
 import random
 import os
 
@@ -143,28 +143,30 @@ def imageLoader(img_dir: str, img_list, mask_dir: str, mask_list, batch_size: in
     """
     # keras needs the generator infinite, so we will use while true
     while True:
-        batch_start = 0
-        batch_end = batch_size
+        # keras needs the generator infinite, so we will use while true
+        while True:
+            batch_start = 0
+            batch_end = batch_size
 
-        temp1 = list(zip(img_list, mask_list))
-        random.shuffle(temp1)
-        img_list, mask_list = zip(*temp1)
-        img_list, mask_list = list(img_list), list(mask_list)
+            temp1 = list(zip(img_list, mask_list))
+            random.shuffle(temp1)
+            img_list, mask_list = zip(*temp1)
+            img_list, mask_list = list(img_list), list(mask_list)
 
-        L = len(img_list)
+            L = len(img_list)
 
-        while batch_start < L:
-            limit = min(batch_end, L)
+            while batch_start < L:
+                limit = min(batch_end, L)
 
-            X = load_img(img_dir, img_list[batch_start:limit])
-            Y = load_img(mask_dir, mask_list[batch_start:limit])
+                x = load_img(img_dir, img_list[batch_start:limit])
+                y = load_img(mask_dir, mask_list[batch_start:limit])
 
-            combine_aug(X, Y)
+                binary_combine_aug(x, y)
 
-            batch_start += batch_size
-            batch_end += batch_size
+                batch_start += batch_size
+                batch_end += batch_size
 
-            yield X, Y  # a tuple with two numpy arrays with batch_size samples
+                yield x, y  # a tuple with two numpy arrays with batch_size samples
 
 
 def imageLoader_val(img_dir, img_list, mask_dir, mask_list, batch_size1):

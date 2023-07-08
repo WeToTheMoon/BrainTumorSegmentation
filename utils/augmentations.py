@@ -1,5 +1,6 @@
 import numpy as np
 import elasticdeform
+from scipy.ndimage import affine_transform
 
 
 def brightness(x, y):
@@ -33,6 +34,54 @@ def elastic(x, y, sigma):
     return x_el, y_el
 
 
+def binary_elastic(x, y):
+    [x_el, y_el] = elasticdeform.deform_random_grid(
+        [x, y], sigma=2, axis=[(0, 1, 2), (0, 1, 2)], order=[1, 0], mode='constant')
+
+    return x_el, y_el
+
+
+def rotation(x, y):
+    """
+    Rotate a 3D image with alfa, beta and gamma degree respect the axis x, y and z respectively.
+    The three angles are chosen randomly between 0-30 degrees
+    """
+
+    alpha, beta, gamma = np.random.random_sample(3) * np.pi / 10
+    Rx = np.array([[1, 0, 0],
+                   [0, np.cos(alpha), -np.sin(alpha)],
+                   [0, np.sin(alpha), np.cos(alpha)]])
+
+    Ry = np.array([[np.cos(beta), 0, np.sin(beta)],
+                   [0, 1, 0],
+                   [-np.sin(beta), 0, np.cos(beta)]])
+
+    Rz = np.array([[np.cos(gamma), -np.sin(gamma), 0],
+                   [np.sin(gamma), np.cos(gamma), 0],
+                   [0, 0, 1]])
+
+    R_rot = np.dot(np.dot(Rx, Ry), Rz)
+
+    a, b = 0.8, 1.2
+    alpha, beta, gamma = (b - a) * np.random.random_sample(3) + a
+    R_scale = np.array([[alpha, 0, 0],
+                        [0, beta, 0],
+                        [0, 0, gamma]])
+
+    R = np.dot(R_rot, R_scale)
+    X_rot = np.empty_like(x)
+    y_rot = np.empty_like(y)
+    for b in range(x.shape[0]):
+        for channel in range(x.shape[-1]):
+            X_rot[b, :, :, :, channel] = affine_transform(
+                x[b, :, :, :, channel], R, offset=0, order=1, mode='constant')
+    for b in range(x.shape[0]):
+        y_rot[b, :, :, :] = affine_transform(
+            y[b, :, :, :], R, offset=0, order=0, mode='constant')
+
+    return X_rot, y_rot
+
+
 def combine_aug(x, y):
     """
     Combines the brightness and elastic deformation augmentations with a 30% of each augmentation being applied
@@ -46,4 +95,19 @@ def combine_aug(x, y):
 
     if np.random.randint(0, 10) < 3:
         x_new, y_new = elastic(x_new, y_new, (10., 13.))
+    return x_new, y_new
+
+
+def binary_combine_aug(x, y):
+    x_new, y_new = x, y
+
+    if np.random.randint(0, 10) < 3:
+        x_new, y_new = binary_elastic(x_new, y_new)
+
+    if np.random.randint(0, 10) < 3:
+        x_new, y_new = brightness(x_new, y_new)
+
+    if np.random.randint(0, 10) < 3:
+        x_new, y_new = rotation(x_new, y_new)
+
     return x_new, y_new
