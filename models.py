@@ -3,7 +3,7 @@ from keras.models import Model
 from tensorflow_addons.layers import InstanceNormalization
 
 
-def double_conv_block(x, n_filters, activation):
+def double_conv_block1(x, n_filters, activation):
     x1 = InstanceNormalization()(x)
     x1 = Conv3D(n_filters, 3, padding="same", activation=activation)(x1)
     x2 = InstanceNormalization()(x1)
@@ -67,45 +67,42 @@ def double_conv_block(x, n_filters, activation):
     return x2
 
 
-def multiclass_model(img_height: int, img_width: int, img_channels: int, num_shape: int, num_classes: int):
-    leaky_relu = LeakyReLU(alpha=0.05)
-    inputs = Input((img_height, img_width, img_channels, num_shape))
+def multiclass_model(img_height: int, img_width: int,
+                     img_depth: int, img_channels: int,
+                     num_classes: int, activation=LeakyReLU(alpha=0.05), channels: int = 32):
+    inputs = Input((img_height, img_width, img_depth, img_channels))
 
     if num_classes > 1:
         function = 'softmax'
-        channels = 32
     else:
         function = 'sigmoid'
-        channels = 32
 
-    c1 = double_conv_block1(inputs, channels * 2, leaky_relu)
-    p1 = Conv3D(channels * 2, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c1)
+    c1 = double_conv_block1(inputs, channels * 2, activation)
+    p1 = Conv3D(channels * 2, (3, 3, 3), strides=(2, 2, 2), activation=activation, padding='same')(c1)
 
-    c2 = double_conv_block1(p1, channels * 4, leaky_relu)
-    p2 = Conv3D(channels * 4, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c2)
+    c2 = double_conv_block1(p1, channels * 4, activation)
+    p2 = Conv3D(channels * 4, (3, 3, 3), strides=(2, 2, 2), activation=activation, padding='same')(c2)
 
-    c3 = double_conv_block1(p2, channels * 8, leaky_relu)
-    p3 = Conv3D(channels * 8, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c3)
+    c3 = double_conv_block1(p2, channels * 8, activation)
+    p3 = Conv3D(channels * 8, (3, 3, 3), strides=(2, 2, 2), activation=activation, padding='same')(c3)
 
-    c4 = double_conv_block1(p3, channels * 10, leaky_relu)
+    c4 = double_conv_block1(p3, channels * 10, activation)
 
     u1 = Conv3DTranspose(channels * 8, (2, 2, 2), strides=(2, 2, 2), padding='same')(c4)
     u1 = concatenate([u1, c3])
-    c5 = double_conv_block1(u1, channels * 8, leaky_relu)
+    c5 = double_conv_block1(u1, channels * 8, activation)
 
     u2 = Conv3DTranspose(channels * 4, (2, 2, 2), strides=(2, 2, 2), padding='same')(c5)
     u2 = concatenate([u2, c2])
-    c6 = double_conv_block1(u2, channels * 4, leaky_relu)
+    c6 = double_conv_block1(u2, channels * 4, activation)
 
     u3 = Conv3DTranspose(channels * 2, (2, 2, 2), strides=(2, 2, 2), padding='same')(c6)
     u3 = concatenate([u3, c1])
-    c7 = double_conv_block1(u3, channels * 2, leaky_relu)
+    c7 = double_conv_block1(u3, channels * 2, activation)
 
     outputs = Conv3D(num_classes, (1, 1, 1), activation=function)(c7)
 
-    model = Model(inputs=[inputs], outputs=[outputs])
-
-    return model
+    return Model(inputs=[inputs], outputs=[outputs])
 
 
 def double_conv_block_Unet(x, n_filters):
@@ -154,6 +151,4 @@ def Unet_model():
 
     outputs = Conv3D(4, (1, 1, 1), activation='softmax')(c9)
 
-    model = Model(inputs=[inputs], outputs=[outputs])
-
-    return model
+    return Model(inputs=[inputs], outputs=[outputs])
