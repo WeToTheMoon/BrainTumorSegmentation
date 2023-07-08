@@ -14,7 +14,7 @@ def binary_double_conv_block(x, n_filters, activation='relu'):
 
 def binary_model(img_height: int, img_width: int,
                  img_depth: int, img_channels: int,
-                 num_classes: int, channels: int, activation="relu"):
+                 num_classes: int, channels: int = 20, activation="relu"):
     # Build the model
     inputs = Input((img_height, img_width, img_depth, img_channels))
     s = inputs
