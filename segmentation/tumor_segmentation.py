@@ -30,6 +30,9 @@ model_whole.load_weights(r'C:\Users\kesch\OneDrive\Documents\Deeplearning\seg_we
 
 batch_size = 8
 
+steps_per_epoch = len(train_img_list) // batch_size
+val_steps_per_epoch = len(val_img_list) // batch_size
+
 train_img_datagen = imageLoader(train_img_dir, train_img_list, train_mask_dir, train_mask_list, batch_size)
 val_img_datagen = imageLoader_val_crop(val_img_dir, val_img_list, val_mask_dir, val_mask_list, batch_size, model_whole)
 
@@ -142,3 +145,11 @@ def put_together(img, msk):
     img_final = np.argmax(img_final, axis=4)
     msk = np.argmax(msk, axis=4)
     return img_final, msk, uncertainty
+# model.load_weights(checkpoint_path)
+#
+# model.fit(train_img_datagen,
+#           steps_per_epoch=steps_per_epoch,
+#           epochs=300, verbose=1,
+#           validation_data=val_img_datagen,
+#           validation_steps=val_steps_per_epoch,
+#           callbacks=[callback])
