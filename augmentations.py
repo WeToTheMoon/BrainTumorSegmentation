@@ -41,12 +41,9 @@ def combine_aug(x, y):
     """
     x_new, y_new = x, y
 
-    prob = np.random.randint(0, 10)
-    prob1 = np.random.randint(0, 10)
-
-    if prob < 3:
+    if np.random.randint(0, 10) < 3:
         x_new, y_new = brightness(x_new, y_new)
 
-    if prob1 < 3:
+    if np.random.randint(0, 10) < 3:
         x_new, y_new = elastic(x_new, y_new, (10., 13.))
     return x_new, y_new
