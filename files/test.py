@@ -1,11 +1,9 @@
 import numpy as np
-from glob import glob
-from matplotlib import pyplot as plt
-import sys
 from keras.layers import Input, Conv3D, concatenate, Conv3DTranspose, LeakyReLU
-from tensorflow_addons.layers import InstanceNormalization
 from keras.models import Model
-import tensorflow as tf
+from tensorflow_addons.layers import InstanceNormalization
+
+
 # np.set_printoptions(threshold=sys.maxsize)
 # #Group Images
 # testing_imgs = glob(r"C:\Users\kesch\OneDrive\Desktop\BrainTumorSeg\val\images\*.npy")
@@ -13,7 +11,7 @@ import tensorflow as tf
 # #Group Masks
 # mask_imgs = glob(r"C:\Users\kesch\OneDrive\Desktop\BratsSeg1\val\masks\*.npy")
 
-#Conv layers of binary masks
+# Conv layers of binary masks
 def double_conv_block(x, n_filters):
     leaky_relu = LeakyReLU(alpha=0.01)
     x = InstanceNormalization()(x)
@@ -27,57 +25,59 @@ def double_conv_block(x, n_filters):
     x2 = Conv3D(n_filters, 3, padding="same", activation=leaky_relu)(x2)
     return x2
 
-#Model
+
+# Model
 def simple_unet_model(IMG_HEIGHT, IMG_WIDTH, IMG_DEPTH, IMG_CHANNELS, num_classes):
-#Build the model
+    # Build the model
     leaky_relu = LeakyReLU(alpha=0.01)
     n_channels = 16
     inputs = Input((IMG_HEIGHT, IMG_WIDTH, IMG_DEPTH, IMG_CHANNELS))
-    #s = Lambda(lambda x: x / 255)(inputs)   #No need for this if we normalize our inputs beforehand
+    # s = Lambda(lambda x: x / 255)(inputs)   #No need for this if we normalize our inputs beforehand
     s = inputs
 
-    #Contraction path
+    # Contraction path
     c1 = double_conv_block(s, n_channels)
-    p1 = Conv3D(n_channels, (3, 3, 3), strides = (2,2,2), activation=leaky_relu, padding='same')(c1)
+    p1 = Conv3D(n_channels, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c1)
 
-    c2 = double_conv_block(p1, n_channels*2)
-    p2 = Conv3D(n_channels*2, (3, 3, 3), strides = (2,2,2), activation=leaky_relu, padding='same')(c2)
+    c2 = double_conv_block(p1, n_channels * 2)
+    p2 = Conv3D(n_channels * 2, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c2)
 
-    c3 = double_conv_block(p2, n_channels*4)
-    p3 = Conv3D(n_channels*4, (3, 3, 3), strides = (2,2,2), activation=leaky_relu, padding='same')(c3)
+    c3 = double_conv_block(p2, n_channels * 4)
+    p3 = Conv3D(n_channels * 4, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c3)
 
-    c4 = double_conv_block(p3, n_channels*8)
-    p4 = Conv3D(n_channels*8, (3, 3, 3), strides = (2,2,2), activation=leaky_relu, padding='same')(c4)
+    c4 = double_conv_block(p3, n_channels * 8)
+    p4 = Conv3D(n_channels * 8, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c4)
 
-    c5 = double_conv_block(p4, n_channels*16)
+    c5 = double_conv_block(p4, n_channels * 16)
 
-    #Expansive path
-    u6 = Conv3DTranspose(n_channels*8, (2, 2, 2), strides=(2, 2, 2), padding='same')(c5)
+    # Expansive path
+    u6 = Conv3DTranspose(n_channels * 8, (2, 2, 2), strides=(2, 2, 2), padding='same')(c5)
     u6 = concatenate([u6, c4])
-    c6 = double_conv_block(u6, n_channels*8)
+    c6 = double_conv_block(u6, n_channels * 8)
 
-    u7 = Conv3DTranspose(n_channels*4, (2, 2, 2), strides=(2, 2, 2), padding='same')(c6)
+    u7 = Conv3DTranspose(n_channels * 4, (2, 2, 2), strides=(2, 2, 2), padding='same')(c6)
     u7 = concatenate([u7, c3])
-    c7 = double_conv_block(u7, n_channels*4)
+    c7 = double_conv_block(u7, n_channels * 4)
 
-    u8 = Conv3DTranspose(n_channels*2, (2, 2, 2), strides=(2, 2, 2), padding='same')(c7)
+    u8 = Conv3DTranspose(n_channels * 2, (2, 2, 2), strides=(2, 2, 2), padding='same')(c7)
     u8 = concatenate([u8, c2])
-    c8 = double_conv_block(u8, n_channels*2)
+    c8 = double_conv_block(u8, n_channels * 2)
 
     u9 = Conv3DTranspose(n_channels, (2, 2, 2), strides=(2, 2, 2), padding='same')(c8)
     u9 = concatenate([u9, c1])
-    c9 = double_conv_block(u9, n_channels*2)
+    c9 = double_conv_block(u9, n_channels * 2)
 
     outputs = Conv3D(num_classes, (1, 1, 1), activation='sigmoid')(c9)
-        #Try using sigmoid (research papers)
+    # Try using sigmoid (research papers)
     model = Model(inputs=[inputs], outputs=[outputs])
-    #Changed dropout https://github.com/bnsreenu/python_for_microscopists/blob/master/231_234_BraTa2020_Unet_segmentation/simple_3d_unet.py
-    #compile model outside of this function to make it flexible.
+    # Changed dropout https://github.com/bnsreenu/python_for_microscopists/blob/master/231_234_BraTa2020_Unet_segmentation/simple_3d_unet.py
+    # compile model outside of this function to make it flexible.
     return model
 
-#Create Cropped Photo with 0 pooling
+
+# Create Cropped Photo with 0 pooling
 def crop_photo(img_orig):
-    #File Path of image, mask of corresponding image, image
+    # File Path of image, mask of corresponding image, image
     a_list = []
     b_list = []
     c_list = []
@@ -88,21 +88,21 @@ def crop_photo(img_orig):
     model.load_weights(r'C:\Users\kesch\OneDrive\Documents\Deeplearning\seg_weights\binary_growth.hdf5')
     test_img_input = np.expand_dims(img_orig, axis=0)
     test_prediction = model.predict(test_img_input)
-    img_temp = test_prediction[0,:,:,:,0]
+    img_temp = test_prediction[0, :, :, :, 0]
     for i in range(128):
-        if np.sum(img_temp[:,:,i]) >= 1:
+        if np.sum(img_temp[:, :, i]) >= 1:
             try:
-                location = np.where(img_temp[:,:,i] == 1)
+                location = np.where(img_temp[:, :, i] == 1)
                 a = np.amin(location[0])
                 b = np.amax(location[0])
                 c = np.amin(location[1])
                 d = np.amax(location[1])
-                
+
                 a -= 12
                 b += 12
                 c -= 12
                 d += 12
-                
+
                 if a < 0:
                     a = 0
                 else:
@@ -135,11 +135,12 @@ def crop_photo(img_orig):
     print(b)
     print(c)
     print(d)
-    image_new = img_orig[a:b,c:d,:]
-    image_bin = img_temp[a:b,c:d,:] # Change to test_prediction
-    
+    image_new = img_orig[a:b, c:d, :]
+    image_bin = img_temp[a:b, c:d, :]  # Change to test_prediction
+
     # image_fin = np.concatenate((image_new, image_bin), axis = -1)
     return img_temp, image_bin
+
 
 img = np.load(r"C:\Users\kesch\OneDrive\Desktop\Bratsimages_normalized_onlybrain\images\image_120.npy")
 msk = np.load(r"C:\Users\kesch\OneDrive\Desktop\Bratsimages_normalized_onlybrain\masks\mask_120.npy")
@@ -155,9 +156,6 @@ img_before_crop, img_crop = crop_photo(img)
 #     plt.title('After Crop')
 #     plt.imshow(img_crop[:, :, n_slice], cmap = 'gray')
 #     plt.show()
-
-
-
 
 
 # for i in glob(r'C:\Users\kesch\OneDrive\Desktop\BrainTumorSeg\val\images\image*'):
@@ -179,7 +177,7 @@ img_before_crop, img_crop = crop_photo(img)
 #         img = np.load(loc)
 #     image = crop_photo(img)
 #     np.save(i, image)
-    
+
 # img = np.load(R"C:\Users\kesch\OneDrive\Desktop\BratsSegBinary\val\images\image_0.npy")
 # print(img.shape)
 # for i in range(128):

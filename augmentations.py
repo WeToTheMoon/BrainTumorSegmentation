@@ -2,15 +2,15 @@ import numpy as np
 import elasticdeform
 
 
-def brightness(X, y):
+def brightness(x, y):
     """
     Applies brightness to X and Y
-    :param X:
+    :param x:
     :param y:
     """
-    x_new = np.zeros(X.shape)
-    for c in range(X.shape[-1]):
-        im = X[:, :, :, c]
+    x_new = np.zeros(x.shape)
+    for c in range(x.shape[-1]):
+        im = x[:, :, :, c]
         gain = np.random.uniform(0.8, 2.3)
         gamma = np.random.uniform(0.8, 2.3)
         im_new = np.sign(im) * gain * (np.abs(im) ** gamma)

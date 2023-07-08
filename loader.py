@@ -4,7 +4,7 @@ import random
 import os
 
 
-def load_img(img_dir, img_list):
+def load_img(img_dir: str, img_list):
     """
     loads the image and the mask
     :param img_dir:
@@ -132,19 +132,19 @@ def imageLoader_val_crop(img_dir, img_list, mask_dir, mask_list, batch_size1, mo
             yield X, Y
 
 
-def imageLoader(img_dir, img_list, mask_dir, mask_list, batch_size1):
+def imageLoader(img_dir: str, img_list, mask_dir: str, mask_list, batch_size: int):
     """
     Loads images without cropping
     :param img_dir:
     :param img_list:
     :param mask_dir:
     :param mask_list:
-    :param batch_size1:
+    :param batch_size:
     """
     # keras needs the generator infinite, so we will use while true
     while True:
         batch_start = 0
-        batch_end = batch_size1
+        batch_end = batch_size
 
         temp1 = list(zip(img_list, mask_list))
         random.shuffle(temp1)
@@ -161,8 +161,8 @@ def imageLoader(img_dir, img_list, mask_dir, mask_list, batch_size1):
 
             combine_aug(X, Y)
 
-            batch_start += batch_size1
-            batch_end += batch_size1
+            batch_start += batch_size
+            batch_end += batch_size
 
             yield X, Y  # a tuple with two numpy arrays with batch_size samples
 

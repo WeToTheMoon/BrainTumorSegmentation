@@ -30,44 +30,44 @@
 
 # for img in range(len(t2_list)):   #Using t1_list as all lists are of same size
 #     print("Now preparing image and masks number: ", img)
-      
+
 #     temp_image_t2=nib.load(t2_list[img]).get_fdata()
 #     temp_image_t2 = temp_image_t2[56:184, 56:184, 13:141]
 #     temp_image_t2=temp_image_t2.reshape(-1, temp_image_t2.shape[-1]).reshape(temp_image_t2.shape)
 #     temp_image_t2 = z_score(temp_image_t2)
-    
+
 #     temp_image_t1ce=nib.load(t1ce_list[img]).get_fdata()
 #     temp_image_t1ce = temp_image_t1ce[56:184, 56:184, 13:141]
 #     temp_image_t1ce=temp_image_t1ce.reshape(-1, temp_image_t1ce.shape[-1]).reshape(temp_image_t1ce.shape)
 #     temp_image_t1ce = z_score(temp_image_t1ce)
-   
+
 #     temp_image_flair=nib.load(flair_list[img]).get_fdata()
 #     temp_image_flair = temp_image_flair[56:184, 56:184, 13:141]
 #     temp_image_flair=temp_image_flair.reshape(-1, temp_image_flair.shape[-1]).reshape(temp_image_flair.shape)
 #     temp_image_flair = z_score(temp_image_flair)
-    
+
 #     temp_image_t1=nib.load(t1_list[img]).get_fdata()
 #     temp_image_t1 = temp_image_t1[56:184, 56:184, 13:141]
 #     temp_image_t1=temp_image_t1.reshape(-1, temp_image_t1.shape[-1]).reshape(temp_image_t1.shape)
 #     temp_image_t1 = z_score(temp_image_t1)
-        
+
 #     temp_mask=nib.load(mask_list[img]).get_fdata()
 #     temp_mask=temp_mask.astype(np.uint8)
 #     temp_mask[temp_mask==4] = 3  #Reassign mask values 4 to 3
 #     temp_mask = temp_mask[56:184, 56:184, 13:141]
 #     print(np.unique(temp_mask))
-    
+
 #     temp_combined_images = np.stack([temp_image_flair, temp_image_t1ce, temp_image_t1, temp_image_t2], axis=3)
 
-    
+
 #     val, counts = np.unique(temp_mask, return_counts=True)
-    
+
 #     if (1 - (counts[0]/counts.sum())) > 0.01:  #At least 1% useful volume with labels that are not 0
 #         print("Save Me")
 #         temp_mask= to_categorical(temp_mask, num_classes=4)
 #         np.save(r'C:\Users\kesch\OneDrive\Desktop\Bratsimages_normalized_onlybrain\images\image_'+str(img)+'.npy', temp_combined_images)
 #         np.save(r'C:\Users\kesch\OneDrive\Desktop\Bratsimages_normalized_onlybrain\masks\mask_'+str(img)+'.npy', temp_mask)
-        
+
 #     else:
 #         print("I am useless")
 
@@ -83,15 +83,13 @@
 # #     images=[]
 # #     for i, image_name in enumerate(img_list):    
 # #         if (image_name.split('.')[1] == 'npy'):
-            
+
 # #             image = np.load(img_dir+ '/' + image_name)
-                      
+
 # #             images.append(image)
 # #     images = np.array(images)
-    
+
 # #     return(images)
-
-
 
 
 # # def imageLoader(img_dir, img_list, mask_dir, mask_list, batch_size):
@@ -106,7 +104,7 @@
 
 # #         while batch_start < L:
 # #             limit = min(batch_end, L)
-                       
+
 # #             X = load_img(img_dir, img_list[batch_start:limit])
 # #             Y = load_img(mask_dir, mask_list[batch_start:limit])
 
@@ -176,11 +174,10 @@ masks = glob.glob(r"C:\Users\kesch\OneDrive\Desktop\BrainTumorSeg\val\masks\*.np
 
 for i in images:
     msg = i
-    msg = msg.replace("BrainTumorSeg\\val","Bratsimages_normalized_onlybrain")
+    msg = msg.replace("BrainTumorSeg\\val", "Bratsimages_normalized_onlybrain")
     img = np.load(msg)
     np.save(i.replace("BrainTumorSeg", "Full_Segmentation"), img)
-    
-for j in masks:
-    msk = np.load(j.replace("BrainTumorSeg\\val","Bratsimages_normalized_onlybrain"))
-    np.save(j.replace("BrainTumorSeg", "Full_Segmentation"), msk)
 
+for j in masks:
+    msk = np.load(j.replace("BrainTumorSeg\\val", "Bratsimages_normalized_onlybrain"))
+    np.save(j.replace("BrainTumorSeg", "Full_Segmentation"), msk)
