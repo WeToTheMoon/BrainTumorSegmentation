@@ -12,6 +12,10 @@ def double_conv_block(x, n_filters, activation):
 
 
 def binary_model():
+    """
+    Constructor for the bianry model
+    :return:
+    """
     leaky_relu = LeakyReLU(alpha=0.05)
     channels = 32
     inputs = Input((48, 48, 128, 4))
@@ -46,7 +50,14 @@ def binary_model():
     return model
 
 
-def double_conv_block1(x, n_filters, activation):
+def double_conv_block(x, n_filters, activation):
+    """
+    Convolution block used in the encoder and decoder
+    :param x:
+    :param n_filters:
+    :param activation:
+    :return:
+    """
     x1 = BatchNormalization()(x)
     x1 = BatchNormalization(axis=4)(x1)
     x1 = Conv3D(n_filters, 3, padding="same", activation=activation)(x1)
