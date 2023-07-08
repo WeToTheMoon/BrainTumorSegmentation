@@ -90,7 +90,7 @@ def multiclass_model(img_height: int, img_width: int, img_channels: int, num_sha
     u3 = concatenate([u3, c1])
     c7 = double_conv_block1(u3, channels * 2, leaky_relu)
 
-    outputs = Conv3D(4, (1, 1, 1), activation=function)(c7)
+    outputs = Conv3D(num_classes, (1, 1, 1), activation=function)(c7)
 
     model = Model(inputs=[inputs], outputs=[outputs])
 
