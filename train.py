@@ -1,11 +1,11 @@
 import os
 
 from keras.callbacks import ModelCheckpoint
-from optimizer import LH_Adam
+from utils.optimizers import LH_Adam
 
-from loader import imageLoader_crop, imageLoader_val_crop
-from metric import dice_coef_multilabel, enhancing_tumor, peritumoral_edema, core_tumor
-from models import multiclass_model, binary_model
+from utils.loader import imageLoader_crop, imageLoader_val_crop
+from utils.metrics import dice_coef_multilabel, enhancing_tumor, peritumoral_edema, core_tumor
+from utils.models import multiclass_model, binary_model
 
 train_img_dir = os.path.realpath(r'/mnt/c/Users/kesch/OneDrive/Desktop/BrainTumorSeg/train/images')
 train_mask_dir = os.path.realpath(r'/mnt/c/Users/kesch/OneDrive/Desktop/BrainTumorSeg/train/masks')

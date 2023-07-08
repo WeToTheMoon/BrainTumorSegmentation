@@ -4,17 +4,16 @@ import random
 import elasticdeform
 import numpy as np
 from keras.callbacks import ModelCheckpoint
-from keras.layers import Input, Conv3D, concatenate, Conv3DTranspose, LeakyReLU
+from keras.layers import Input, Conv3D, concatenate, Conv3DTranspose
 from keras.models import Model
-from matplotlib import pyplot as plt
 from scipy.ndimage.interpolation import affine_transform
 from tensorflow import keras
 from tensorflow_addons.layers import InstanceNormalization
 
-from augmentations import brightness
-from loader import load_img, imageLoader_val
-from metric import dice_coef
-from loss import dice_coef_loss
+from utils.augmentations import brightness
+from utils.loader import load_img, imageLoader_val
+from utils.metrics import dice_coef
+from utils.loss import dice_coef_loss
 
 
 def binary_elastic(x, y):
