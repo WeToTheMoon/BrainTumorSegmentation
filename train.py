@@ -5,7 +5,7 @@ from optimizer import LH_Adam
 
 from loader import imageLoader_crop, imageLoader_val_crop
 from metric import dice_coef_multilabel, enhancing_tumor, peritumoral_edema, core_tumor
-from models import Multiclass_model, binary_model
+from models import multiclass_model, binary_model
 
 train_img_dir = os.path.realpath(r'/mnt/c/Users/kesch/OneDrive/Desktop/BrainTumorSeg/train/images')
 train_mask_dir = os.path.realpath(r'/mnt/c/Users/kesch/OneDrive/Desktop/BrainTumorSeg/train/masks')
@@ -36,7 +36,7 @@ LR = 0.0003
 optim = LH_Adam()
 Metrics = [dice_coef_multilabel, enhancing_tumor, peritumoral_edema, core_tumor]
 
-model = Multiclass_model()
+model = multiclass_model(48, 48, 128, 5, 4)
 model.compile(optimizer=optim, loss='categorical_crossentropy', metrics=Metrics)
 
 checkpoint_path = './Segmentation weights/Unet.hdf5'

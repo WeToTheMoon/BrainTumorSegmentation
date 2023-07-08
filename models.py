@@ -56,10 +56,16 @@ def double_conv_block1(x, n_filters, activation):
     return x2
 
 
-def Multiclass_model():
+def multiclass_model(img_height: int, img_width: int, img_channels: int, num_shape: int, num_classes: int):
     leaky_relu = LeakyReLU(alpha=0.05)
-    channels = 32
-    inputs = Input((48, 48, 128, 5))
+    inputs = Input((img_height, img_width, img_channels, num_shape))
+
+    if num_classes > 1:
+        function = 'softmax'
+        channels = 32
+    else:
+        function = 'sigmoid'
+        channels = 32
 
     c1 = double_conv_block1(inputs, channels * 2, leaky_relu)
     p1 = Conv3D(channels * 2, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c1)
@@ -84,7 +90,7 @@ def Multiclass_model():
     u3 = concatenate([u3, c1])
     c7 = double_conv_block1(u3, channels * 2, leaky_relu)
 
-    outputs = Conv3D(4, (1, 1, 1), activation='softmax')(c7)
+    outputs = Conv3D(4, (1, 1, 1), activation=function)(c7)
 
     model = Model(inputs=[inputs], outputs=[outputs])
 

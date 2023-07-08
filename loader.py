@@ -24,6 +24,8 @@ def load_img_cropped(img_dir, img_list):
     :param img_dir:
     :param img_list:
     """
+
+    # Does not load the binary mask
     images = []
     for i, image_name in enumerate(img_list):
         if image_name.split('.')[1] == 'npy':
@@ -62,7 +64,7 @@ def global_extraction(img, mask):
 
 def imageLoader_crop(img_dir, img_list, mask_dir, mask_list, batch_size1, model):
     """
-    Generator for the images
+    Generator for the images when predicting the multiclass mask in the train set
     :param img_dir:
     :param img_list:
     :param mask_dir:
@@ -101,7 +103,7 @@ def imageLoader_crop(img_dir, img_list, mask_dir, mask_list, batch_size1, model)
 
 def imageLoader_val_crop(img_dir, img_list, mask_dir, mask_list, batch_size1, model):
     """
-    Generator for the training images
+    Generator for the images when predicting the multiclass mask in the validation set
     :param img_dir:
     :param img_list:
     :param mask_dir:
@@ -187,7 +189,7 @@ def imageLoader_val(img_dir, img_list, mask_dir, mask_list, batch_size1):
             X = load_img(img_dir, img_list[batch_start:limit])
             Y = load_img(mask_dir, mask_list[batch_start:limit])
 
-            yield X, Y  # a tuple with two numpy arrays with batch_size samples
-
             batch_start += batch_size1
             batch_end += batch_size1
+
+            yield X, Y  # a tuple with two numpy arrays with batch_size samples
