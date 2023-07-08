@@ -1,11 +1,12 @@
-from loader import imageLoader_crop, imageLoader_val_crop
-from models import Multiclass_model, binary_model
-import keras
-from metric import dice_coef_multilabel, enhancing_tumor, peritumoral_edema, core_tumor
-from keras.callbacks import ModelCheckpoint
 import os
-from loss import log_cosh_dice_loss
+
+from keras.callbacks import ModelCheckpoint
 from optimizer import LH_Adam
+
+from loader import imageLoader_crop, imageLoader_val_crop
+from metric import dice_coef_multilabel, enhancing_tumor, peritumoral_edema, core_tumor
+from models import Multiclass_model, binary_model
+
 train_img_dir = os.path.realpath(r'/mnt/c/Users/kesch/OneDrive/Desktop/BrainTumorSeg/train/images')
 train_mask_dir = os.path.realpath(r'/mnt/c/Users/kesch/OneDrive/Desktop/BrainTumorSeg/train/masks')
 val_img_dir = os.path.realpath(r'/mnt/c/Users/kesch/OneDrive/Desktop/BrainTumorSeg/val/images')
@@ -23,10 +24,10 @@ model_whole = binary_model()
 model_whole.load_weights("Segmentation weights/binary_model.hdf5")
 
 train_img_datagen = imageLoader_crop(train_img_dir, train_img_list,
-                                train_mask_dir, train_mask_list, batch_size, model_whole)
+                                     train_mask_dir, train_mask_list, batch_size, model_whole)
 
 val_img_datagen = imageLoader_val_crop(val_img_dir, val_img_list,
-                                  val_mask_dir, val_mask_list, batch_size, model_whole)
+                                       val_mask_dir, val_mask_list, batch_size, model_whole)
 
 steps_per_epoch = len(train_img_list) // batch_size
 val_steps_per_epoch = len(val_img_list) // batch_size
@@ -47,5 +48,4 @@ history = model.fit(train_img_datagen,
                     verbose=1,
                     validation_data=val_img_datagen,
                     validation_steps=val_steps_per_epoch,
-                    callbacks=[callback],
-                    )
+                    callbacks=[callback])
