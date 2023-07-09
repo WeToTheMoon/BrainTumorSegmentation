@@ -1,4 +1,5 @@
 import numpy as np
+from utils.models import binary_model
 from keras.layers import Input, Conv3D, concatenate, Conv3DTranspose, LeakyReLU
 from keras.models import Model
 from tensorflow_addons.layers import InstanceNormalization
@@ -11,70 +12,6 @@ from tensorflow_addons.layers import InstanceNormalization
 # #Group Masks
 # mask_imgs = glob(r"C:\Users\kesch\OneDrive\Desktop\BratsSeg1\val\masks\*.npy")
 
-# Conv layers of binary masks
-def double_conv_block(x, n_filters):
-    leaky_relu = LeakyReLU(alpha=0.01)
-    x = InstanceNormalization()(x)
-    x = Conv3D(n_filters, 3, padding="same", activation=leaky_relu)(x)
-    x1 = InstanceNormalization()(x)
-    x1 = Conv3D(n_filters, 3, padding="same", activation=leaky_relu)(x)
-    x1 = concatenate([x1, x])
-    x2 = InstanceNormalization()(x1)
-    x2 = Conv3D(n_filters, 3, padding="same", activation=leaky_relu)(x2)
-    x2 = InstanceNormalization()(x1)
-    x2 = Conv3D(n_filters, 3, padding="same", activation=leaky_relu)(x2)
-    return x2
-
-
-# Model
-def simple_unet_model(IMG_HEIGHT, IMG_WIDTH, IMG_DEPTH, IMG_CHANNELS, num_classes):
-    # Build the model
-    leaky_relu = LeakyReLU(alpha=0.01)
-    n_channels = 16
-    inputs = Input((IMG_HEIGHT, IMG_WIDTH, IMG_DEPTH, IMG_CHANNELS))
-    # s = Lambda(lambda x: x / 255)(inputs)   #No need for this if we normalize our inputs beforehand
-    s = inputs
-
-    # Contraction path
-    c1 = double_conv_block(s, n_channels)
-    p1 = Conv3D(n_channels, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c1)
-
-    c2 = double_conv_block(p1, n_channels * 2)
-    p2 = Conv3D(n_channels * 2, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c2)
-
-    c3 = double_conv_block(p2, n_channels * 4)
-    p3 = Conv3D(n_channels * 4, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c3)
-
-    c4 = double_conv_block(p3, n_channels * 8)
-    p4 = Conv3D(n_channels * 8, (3, 3, 3), strides=(2, 2, 2), activation=leaky_relu, padding='same')(c4)
-
-    c5 = double_conv_block(p4, n_channels * 16)
-
-    # Expansive path
-    u6 = Conv3DTranspose(n_channels * 8, (2, 2, 2), strides=(2, 2, 2), padding='same')(c5)
-    u6 = concatenate([u6, c4])
-    c6 = double_conv_block(u6, n_channels * 8)
-
-    u7 = Conv3DTranspose(n_channels * 4, (2, 2, 2), strides=(2, 2, 2), padding='same')(c6)
-    u7 = concatenate([u7, c3])
-    c7 = double_conv_block(u7, n_channels * 4)
-
-    u8 = Conv3DTranspose(n_channels * 2, (2, 2, 2), strides=(2, 2, 2), padding='same')(c7)
-    u8 = concatenate([u8, c2])
-    c8 = double_conv_block(u8, n_channels * 2)
-
-    u9 = Conv3DTranspose(n_channels, (2, 2, 2), strides=(2, 2, 2), padding='same')(c8)
-    u9 = concatenate([u9, c1])
-    c9 = double_conv_block(u9, n_channels * 2)
-
-    outputs = Conv3D(num_classes, (1, 1, 1), activation='sigmoid')(c9)
-    # Try using sigmoid (research papers)
-    model = Model(inputs=[inputs], outputs=[outputs])
-    # Changed dropout https://github.com/bnsreenu/python_for_microscopists/blob/master/231_234_BraTa2020_Unet_segmentation/simple_3d_unet.py
-    # compile model outside of this function to make it flexible.
-    return model
-
-
 # Create Cropped Photo with 0 pooling
 def crop_photo(img_orig):
     # File Path of image, mask of corresponding image, image
@@ -83,7 +20,7 @@ def crop_photo(img_orig):
     c_list = []
     d_list = []
 
-    model = simple_unet_model(128, 128, 128, 4, 1)
+    model = binary_model(128, 128, 128, 4, 1)
 
     model.load_weights(r'C:\Users\kesch\OneDrive\Documents\Deeplearning\seg_weights\binary_growth.hdf5')
     test_img_input = np.expand_dims(img_orig, axis=0)
@@ -91,46 +28,32 @@ def crop_photo(img_orig):
     img_temp = test_prediction[0, :, :, :, 0]
     for i in range(128):
         if np.sum(img_temp[:, :, i]) >= 1:
-            try:
-                location = np.where(img_temp[:, :, i] == 1)
-                a = np.amin(location[0])
-                b = np.amax(location[0])
-                c = np.amin(location[1])
-                d = np.amax(location[1])
+            location = np.where(img_temp[:, :, i] == 1)
+            a = np.amin(location[0])
+            b = np.amax(location[0])
+            c = np.amin(location[1])
+            d = np.amax(location[1])
 
-                a -= 12
-                b += 12
-                c -= 12
-                d += 12
+            a -= 12
+            b += 12
+            c -= 12
+            d += 12
 
-                if a < 0:
-                    a = 0
-                else:
-                    pass
-                if b > 128:
-                    b = 128
-                else:
-                    pass
-                if c < 0:
-                    c = 0
-                else:
-                    pass
-                if d > 128:
-                    d = 128
-                else:
-                    pass
-                a_list.append(a)
-                b_list.append(b)
-                c_list.append(c)
-                d_list.append(d)
-            except:
-                pass
-        else:
-            pass
+            a = max(a, 0)
+            b = min(b, 128)
+            c = max(c, 0)
+            d = min(d, 128)
+
+            a_list.append(a)
+            b_list.append(b)
+            c_list.append(c)
+            d_list.append(d)
+
     a = np.amin(a_list)
     b = np.amax(b_list)
     c = np.amin(c_list)
     d = np.amax(d_list)
+
     print(a)
     print(b)
     print(c)
