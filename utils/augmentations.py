@@ -25,6 +25,7 @@ def brightness(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
 def elastic(x: ndarray, y: ndarray, sigma: tuple[float, float]) -> tuple[ndarray, ndarray]:
     """
     Applies elastic deformation to the X and Y equally. The severity is determined by the value of sigma.
+
     :param x:
     :param y:
     :param sigma:
@@ -39,9 +40,12 @@ def elastic(x: ndarray, y: ndarray, sigma: tuple[float, float]) -> tuple[ndarray
 def rotation(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
     """
     Rotate a 3D image with alfa, beta and gamma degree respect the axis x, y and z respectively.
-    The three angles are chosen randomly between 0-30 degrees
-    """
+    The three angles are chosen randomly between 0-30 degrees.
 
+    :param x:
+    :param y:
+    :return:
+    """
     alpha, beta, gamma = np.random.random_sample(3) * np.pi / 10
     Rx = np.array([[1, 0, 0],
                    [0, np.cos(alpha), -np.sin(alpha)],
@@ -79,7 +83,8 @@ def rotation(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
 
 def combine_aug(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
     """
-    Combines the brightness and elastic deformation augmentations with a 30% of each augmentation being applied
+    Combines the brightness and elastic deformation augmentations with a 30% of each augmentation being applied.
+
     :param x:
     :param y:
     """
@@ -94,6 +99,13 @@ def combine_aug(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
 
 
 def binary_combine_aug(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
+    """
+    Combines the elastic, brightness and rotation deformation augmentations with a 30% of each augmentation being
+    applied.
+
+    :param x:
+    :param y:
+    """
     x_new, y_new = x, y
 
     if np.random.randint(0, 10) < 3:

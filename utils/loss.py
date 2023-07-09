@@ -5,7 +5,8 @@ from utils.metrics import dice_coef
 
 def CE(y_true, y_pred):
     """
-    Gets the categorical cross entropy for the labels
+    Gets the categorical cross entropy for the labels.
+
     :param y_true:
     :param y_pred:
     """
@@ -14,7 +15,8 @@ def CE(y_true, y_pred):
 
 def dice_loss(y_true, y_pred):
     """
-    Gets the dice loss for the multiclass labels
+    Gets the dice loss for the multiclass labels.
+
     :param y_true:
     :param y_pred:
     """
@@ -23,7 +25,8 @@ def dice_loss(y_true, y_pred):
 
 def dice_coef_loss(y_true, y_pred):
     """
-    Gets the dice loss for the binary labels
+    Gets the dice loss for the binary labels.
+
     :param y_true:
     :param y_pred:
     """
@@ -32,7 +35,8 @@ def dice_coef_loss(y_true, y_pred):
 
 def log_cosh_dice_loss(y_true, y_pred):
     """
-    Gets the log cosh dice loss for the binary labels
+    Gets the log cosh dice loss for the binary labels.
+
     :param y_true:
     :param y_pred:
     """
@@ -42,7 +46,8 @@ def log_cosh_dice_loss(y_true, y_pred):
 
 def log_cosh_dice_loss_binary(y_true, y_pred):
     """
-    Gets the log cosh dice loss for the binary labels
+    Gets the log cosh dice loss for the binary labels.
+
     :param y_true:
     :param y_pred:
     """

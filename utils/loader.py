@@ -7,7 +7,8 @@ import os
 
 def load_img(img_dir: str, img_list: list[str]) -> ndarray:
     """
-    loads the image and the mask
+    TODO add docs
+
     :param img_dir:
     :param img_list:
     """
@@ -21,7 +22,8 @@ def load_img(img_dir: str, img_list: list[str]) -> ndarray:
 
 def load_img_cropped(img_dir: str, img_list: list[str]) -> list[ndarray]:
     """
-    loads the image and the mask
+    TODO add docs
+
     :param img_dir:
     :param img_list:
     """
@@ -39,7 +41,8 @@ def load_img_cropped(img_dir: str, img_list: list[str]) -> list[ndarray]:
 
 def global_extraction(img: ndarray | list[ndarray], mask: ndarray | list[ndarray]) -> tuple[ndarray, ndarray]:
     """
-    Crops the image to 48 x 48 x 128 x C
+    Crops the image to 48 x 48 x 128 x C.
+
     :param img:
     :param mask:
     """
@@ -68,7 +71,8 @@ def cropped_image_loader(img_dir: str, img_list: list[str],
                          mask_dir: str, mask_list: list[dir],
                          batch_size: int, model) -> tuple[ndarray, ndarray]:
     """
-    Generator for the images when predicting the multiclass mask in the train set
+    Generator for the images when predicting the multiclass mask in the train set.
+
     :param img_dir:
     :param img_list:
     :param mask_dir:
@@ -110,7 +114,8 @@ def cropped_image_loader_val(img_dir: str, img_list: list[str],
                              mask_dir: str, mask_list: list[dir],
                              batch_size: int, model) -> tuple[ndarray, ndarray]:
     """
-    Generator for the images when predicting the multiclass mask in the validation set
+    Generator for the images when predicting the multiclass mask in the validation set.
+
     :param img_dir:
     :param img_list:
     :param mask_dir:
@@ -143,7 +148,8 @@ def image_loader(img_dir: str, img_list: list[str],
                  mask_dir: str, mask_list: list[dir],
                  batch_size: int) -> tuple[ndarray, ndarray]:
     """
-    Loads images without cropping
+    TODO add docs
+
     :param img_dir:
     :param img_list:
     :param mask_dir:
@@ -182,7 +188,8 @@ def image_loader_val(img_dir: str, img_list: list[str],
                      mask_dir: str, mask_list: list[dir],
                      batch_size: int) -> tuple[ndarray, ndarray]:
     """
-    Loads val images without cropping
+    TODO add docs
+
     :param img_dir:
     :param img_list:
     :param mask_dir:

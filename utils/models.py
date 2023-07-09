@@ -3,7 +3,7 @@ from keras.models import Model
 from tensorflow_addons.layers import InstanceNormalization
 
 
-def binary_double_conv_block(x, n_filters, activation='relu'):
+def binary_double_conv_block(x, n_filters, activation="relu"):
     x = InstanceNormalization()(x)
     x = Conv3D(n_filters, 3, padding="same", activation=activation)(x)
     x2 = InstanceNormalization()(x)
@@ -56,8 +56,6 @@ def double_conv_block(x, n_filters: int, activation):
     x2 = Conv3D(n_filters, 3, padding="same", activation=activation)(x2)
     return x2
 
-
-# Change to binary model
 
 def brain_tumor_model(img_height: int, img_width: int,
                       img_depth: int, img_channels: int,

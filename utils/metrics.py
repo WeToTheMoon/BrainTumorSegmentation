@@ -3,7 +3,8 @@ import keras.backend as K
 
 def dice_coef(y_true, y_pred, smooth=1):
     """
-    Takes the TRUE and PRED and returns the dice score
+    Takes the TRUE and PRED and returns the dice score.
+
     :param smooth:
     :param y_true:
     :param y_pred:
@@ -16,7 +17,8 @@ def dice_coef(y_true, y_pred, smooth=1):
 
 def dice_coef_multilabel(y_true, y_pred):
     """
-    Takes the TRUE and PRED and returns overall dice score across multiple regions
+    Takes the TRUE and PRED and returns overall dice score across multiple regions.
+
     :param y_true:
     :param y_pred:
     """
@@ -25,7 +27,8 @@ def dice_coef_multilabel(y_true, y_pred):
 
 def core_tumor(y_true, y_pred):
     """
-    Computes the dice score of the core_tumor regions
+    Computes the dice score of the core_tumor regions.
+
     :param y_true:
     :param y_pred:
     """
@@ -34,7 +37,8 @@ def core_tumor(y_true, y_pred):
 
 def peritumoral_edema(y_true, y_pred):
     """
-    Computes the dice score of the peritumoral edema region
+    Computes the dice score of the peritumoral edema region.
+
     :param y_true:
     :param y_pred:
     """
@@ -43,7 +47,8 @@ def peritumoral_edema(y_true, y_pred):
 
 def enhancing_tumor(y_true, y_pred):
     """
-    Computes the dice core of the enhancing tumor region
+    Computes the dice core of the enhancing tumor region.
+
     :param y_true:
     :param y_pred:
     """
