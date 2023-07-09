@@ -1,6 +1,6 @@
 import tensorflow as tf
-from metrics import dice_coef_multilabel
-from metrics import dice_coef
+from utils.metrics import dice_coef_multilabel
+from utils.metrics import dice_coef
 
 
 def CE(y_true, y_pred):
