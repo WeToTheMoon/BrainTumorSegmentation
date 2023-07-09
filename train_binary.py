@@ -30,9 +30,6 @@ def main():
     args = arg_parser.parse_args()
 
     # Check Weights File
-    if not path.isfile(args.binary_weights):
-        raise FileExistsError("Unable to find the weights file")
-
     if not args.binary_weights.endswith(".hdf5"):
         raise ValueError("Invalid weight file format")
 
