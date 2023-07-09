@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from os import path
 from glob import glob
 
-from utils.loader import imageLoader_crop, imageLoader_val_crop
+from utils.loader import cropped_image_loader, cropped_image_loader_val
 from utils.loss import log_cosh_dice_loss
 from utils.metrics import dice_coef_multilabel, peritumoral_edema, enhancing_tumor, core_tumor
 from utils.models import brain_tumor_model as BrainTumorModel, binary_model as BinaryModel
@@ -62,10 +62,10 @@ def main():
     steps_per_epoch = len(train_img_list) // batch_size
     val_steps_per_epoch = len(val_img_list) // batch_size
 
-    train_img_datagen = imageLoader_crop(train_img_dir, train_img_list, train_mask_dir, train_mask_list, batch_size,
-                                         binary_model)
-    val_img_datagen = imageLoader_val_crop(val_img_dir, val_img_list, val_mask_dir, val_mask_list, batch_size,
-                                           binary_model)
+    train_img_datagen = cropped_image_loader(train_img_dir, train_img_list, train_mask_dir, train_mask_list, batch_size,
+                                             binary_model)
+    val_img_datagen = cropped_image_loader_val(val_img_dir, val_img_list, val_mask_dir, val_mask_list, batch_size,
+                                               binary_model)
 
     learning_rate = 0.0003
     optim = LH_Adam(learning_rate)

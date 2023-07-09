@@ -7,7 +7,7 @@ from keras.callbacks import ModelCheckpoint
 from tensorflow import keras
 from keras.layers import ELU
 
-from utils.loader import imageLoader_val, imageLoader
+from utils.loader import image_loader_val, image_loader
 from utils.loss import dice_coef_loss
 from utils.metrics import dice_coef
 from utils.models import binary_model
@@ -64,10 +64,10 @@ def main():
     steps_per_epoch = len(train_img_list) // b_size
     val_steps_per_epoch = len(val_img_list) // b_size
 
-    train_img_datagen = imageLoader(train_img_dir, train_img_list,
-                                    train_mask_dir, train_mask_list, b_size)
-    val_img_datagen = imageLoader_val(val_img_dir, val_img_list,
-                                      val_mask_dir, val_mask_list, b_size)
+    train_img_datagen = image_loader(train_img_dir, train_img_list,
+                                     train_mask_dir, train_mask_list, b_size)
+    val_img_datagen = image_loader_val(val_img_dir, val_img_list,
+                                       val_mask_dir, val_mask_list, b_size)
 
     learning_rate = 0.0003
     optim = LH_Adam(learning_rate)
