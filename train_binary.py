@@ -5,22 +5,20 @@ from os import path
 
 from keras.callbacks import ModelCheckpoint
 from tensorflow import keras
+from keras.layers import ELU
 
 from utils.loader import imageLoader_val, imageLoader
 from utils.loss import dice_coef_loss
 from utils.metrics import dice_coef
 from utils.models import binary_model
+from utils.optimizers import LH_Adam
 
 
 def main():
     arg_parser = ArgumentParser()
 
-    arg_parser.add_argument("-t", "--train_dir",
-                            help="Directory for the training dataset. Should contain the 'images' and 'masks' "
-                                 "directories.",
-                            required=True)
-    arg_parser.add_argument("-v", "--val_dir",
-                            help="Directory for the validation dataset. Should contain the 'images' and 'masks' "
+    arg_parser.add_argument("-d", "--dataset_dir",
+                            help="Directory for the training dataset. Should contain the 'train' and 'val' "
                                  "directories.",
                             required=True)
     arg_parser.add_argument("-w", "--binary_weights",
@@ -34,34 +32,23 @@ def main():
         raise ValueError("Invalid weight file format")
 
     # Check Training Directory
-    if not path.isdir(args.train_dir):
-        raise FileExistsError("Unable to find the training directory")
+    if not path.isdir(args.dataset_dir):
+        raise FileExistsError("Unable to find the dataset directory")
 
-    if not path.isdir(f"{args.train_dir}/images") or not path.isdir(f"{args.train_dir}/masks"):
+    if not path.isdir(f"{args.dataset_dir}/train") or not path.isdir(f"{args.dataset_dir}/val"):
         raise FileExistsError("Unable to find the images and/or masks directory within the training directory")
 
-    training_files = glob(f"{args.train_dir}/*/*/*.npy")
+    training_files = glob(f"{args.dataset_dir}/*/*/*.npy")
+    print(len(training_files))
     if not all([file.endswith(".npy") for file in training_files]) or len(training_files) == 0:
         raise ValueError("The training directory doesn't consist of all .npy files. Make sure that only .npy files "
                          "are present.")
 
-    # Check Validation Directory
-    if not path.isdir(args.val_dir):
-        raise FileExistsError("Unable to find the validation directory")
+    train_img_dir = f"{args.dataset_dir}/train/images"
+    train_mask_dir = f"{args.dataset_dir}/train/masks"
 
-    if not path.isdir(f"{args.train_dir}/images") or not path.isdir(f"{args.train_dir}/masks"):
-        raise FileExistsError("Unable to find the images and/or masks directory within the validation directory")
-
-    validation_files = glob(f"{args.val_dir}/*/*/*.npy")
-    if not all([file.endswith(".npy") for file in validation_files]) or len(validation_files) == 0:
-        raise ValueError("The training directory doesn't consist of all .npy files. Make sure that only .npy files "
-                         "are present.")
-
-    train_img_dir = f"{args.train_dir}/images"
-    train_mask_dir = f"{args.train_dir}/masks"
-
-    val_img_dir = f"{args.val_dir}/images"
-    val_mask_dir = f"{args.val_dir}/masks"
+    val_img_dir = f"{args.dataset_dir}/val/images"
+    val_mask_dir = f"{args.dataset_dir}/val/masks"
 
     train_img_list = os.listdir(train_img_dir)
     train_mask_list = os.listdir(train_mask_dir)
@@ -69,29 +56,29 @@ def main():
     val_img_list = os.listdir(val_img_dir)
     val_mask_list = os.listdir(val_mask_dir)
 
+    n_channels = 20
+    model = binary_model(128, 128, 128, 4, 1, n_channels, activation=ELU())
+
     b_size = 2
+
+    steps_per_epoch = len(train_img_list) // b_size
+    val_steps_per_epoch = len(val_img_list) // b_size
 
     train_img_datagen = imageLoader(train_img_dir, train_img_list,
                                     train_mask_dir, train_mask_list, b_size)
     val_img_datagen = imageLoader_val(val_img_dir, val_img_list,
                                       val_mask_dir, val_mask_list, b_size)
 
-    LR = 0.0003
-    optim = keras.optimizers.Adam(LR)
-
-    steps_per_epoch = len(train_img_list) // b_size
-    val_steps_per_epoch = len(val_img_list) // b_size
-
-    n_channels = 20
-    model = binary_model(128, 128, 128, 4, 1, n_channels)
+    learning_rate = 0.0003
+    optim = LH_Adam(learning_rate)
 
     model.compile(optimizer=optim, loss=dice_coef_loss, metrics=[dice_coef])
 
-    callback = ModelCheckpoint(filepath=args.binary_weights, save_weights_only=True)
+    callback = ModelCheckpoint(filepath=args.binary_weights, save_weights_only=True, save_best_only=True)
 
     model.fit(train_img_datagen,
               steps_per_epoch=steps_per_epoch,
-              epochs=1000,
+              epochs=200,
               verbose=1,
               validation_data=val_img_datagen,
               validation_steps=val_steps_per_epoch,

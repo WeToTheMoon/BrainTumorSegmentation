@@ -33,14 +33,6 @@ def elastic(x, y, sigma):
 
     return x_el, y_el
 
-
-def binary_elastic(x, y):
-    [x_el, y_el] = elasticdeform.deform_random_grid(
-        [x, y], sigma=2, axis=[(0, 1, 2), (0, 1, 2)], order=[1, 0], mode='constant')
-
-    return x_el, y_el
-
-
 def rotation(x, y):
     """
     Rotate a 3D image with alfa, beta and gamma degree respect the axis x, y and z respectively.
@@ -102,7 +94,7 @@ def binary_combine_aug(x, y):
     x_new, y_new = x, y
 
     if np.random.randint(0, 10) < 3:
-        x_new, y_new = binary_elastic(x_new, y_new)
+        x_new, y_new = elastic(x_new, y_new, (2.0, 4.0))
 
     if np.random.randint(0, 10) < 3:
         x_new, y_new = brightness(x_new, y_new)

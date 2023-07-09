@@ -11,7 +11,7 @@ def load_img(img_dir: str, img_list):
     :param img_list:
     """
     images = []
-    for i, image_name in enumerate(img_list):
+    for image_name in img_list:
         if image_name.split('.')[1] == 'npy':
             image = np.load(os.path.join(img_dir, image_name))
             images.append(image)
@@ -27,15 +27,14 @@ def load_img_cropped(img_dir, img_list):
 
     # Does not load the binary mask
     images = []
-    for i, image_name in enumerate(img_list):
+    for image_name in img_list:
         if image_name.split('.')[1] == 'npy':
+            image = np.load(os.path.join(img_dir, image_name))
             if "image" in image_name:
-                image = np.load(os.path.join(img_dir, image_name))
                 images.append(image[:, :, :, :-1])
             else:
-                image = np.load(os.path.join(img_dir, image_name))
                 images.append(image)
-    return np.array(images)
+    return images
 
 
 def global_extraction(img, mask):
