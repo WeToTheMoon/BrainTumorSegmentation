@@ -1,28 +1,30 @@
 import numpy as np
 import elasticdeform
+from numpy import ndarray
 from scipy.ndimage import affine_transform
 
 
-def brightness(x, y):
+def brightness(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
     """
-    Applies brightness to X and Y
+    Applies a random brightness augmentation to the x component.
+
     :param x:
     :param y:
     """
     x_new = np.zeros(x.shape)
-    for c in range(x.shape[-1]):
-        im = x[:, :, :, c]
+    for i in range(x.shape[-1]):
+        im = x[:, :, :, i]
         gain = np.random.uniform(0.8, 2.3)
         gamma = np.random.uniform(0.8, 2.3)
         im_new = np.sign(im) * gain * (np.abs(im) ** gamma)
-        x_new[:, :, :, c] = im_new
+        x_new[:, :, :, i] = im_new
 
     return x_new, y
 
 
-def elastic(x, y, sigma):
+def elastic(x: ndarray, y: ndarray, sigma: tuple[float, float]) -> tuple[ndarray, ndarray]:
     """
-    Applies elastic deformation to the X and Y equally. The severity is determined by the value of sigma
+    Applies elastic deformation to the X and Y equally. The severity is determined by the value of sigma.
     :param x:
     :param y:
     :param sigma:
@@ -33,7 +35,8 @@ def elastic(x, y, sigma):
 
     return x_el, y_el
 
-def rotation(x, y):
+
+def rotation(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
     """
     Rotate a 3D image with alfa, beta and gamma degree respect the axis x, y and z respectively.
     The three angles are chosen randomly between 0-30 degrees
@@ -74,7 +77,7 @@ def rotation(x, y):
     return X_rot, y_rot
 
 
-def combine_aug(x, y):
+def combine_aug(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
     """
     Combines the brightness and elastic deformation augmentations with a 30% of each augmentation being applied
     :param x:
@@ -86,11 +89,11 @@ def combine_aug(x, y):
         x_new, y_new = brightness(x_new, y_new)
 
     if np.random.randint(0, 10) < 3:
-        x_new, y_new = elastic(x_new, y_new, (10., 13.))
+        x_new, y_new = elastic(x_new, y_new, (10.0, 13.0))
     return x_new, y_new
 
 
-def binary_combine_aug(x, y):
+def binary_combine_aug(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
     x_new, y_new = x, y
 
     if np.random.randint(0, 10) < 3:

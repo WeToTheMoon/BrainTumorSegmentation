@@ -49,7 +49,7 @@ def binary_model(img_height: int, img_width: int,
     return Model(inputs=[inputs], outputs=[outputs])
 
 
-def double_conv_block(x, n_filters, activation):
+def double_conv_block(x, n_filters: int, activation):
     x1 = InstanceNormalization()(x)
     x1 = Conv3D(n_filters, 3, padding="same", activation=activation)(x1)
     x2 = InstanceNormalization()(x1)
