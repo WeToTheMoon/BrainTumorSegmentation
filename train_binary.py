@@ -4,7 +4,6 @@ from glob import glob
 from os import path
 
 from keras.callbacks import ModelCheckpoint
-from tensorflow import keras
 from keras.layers import ELU
 
 from utils.loader import image_loader_val, image_loader
