@@ -1,4 +1,4 @@
-from keras.layers import Conv3D, Conv3DTranspose, Input, concatenate, LeakyReLU
+from keras.layers import Conv3D, Conv3DTranspose, Input, concatenate, LeakyReLU, ReLU
 from keras.models import Model
 from tensorflow_addons.layers import InstanceNormalization
 
@@ -20,7 +20,10 @@ def binary_model(img_height: int, img_width: int,
     s = inputs
 
     # Contraction pat
-    c2 = binary_double_conv_block(s, channels * 2)
+    c1 = binary_double_conv_block(s, channels)
+    p1 = Conv3D(channels * 2, (3, 3, 3), strides=(2, 2, 2), activation=activation, padding='same')(c1)
+
+    c2 = binary_double_conv_block(p1, channels * 2)
     p2 = Conv3D(channels * 2, (3, 3, 3), strides=(2, 2, 2), activation=activation, padding='same')(c2)
 
     c3 = binary_double_conv_block(p2, channels * 4)
@@ -42,9 +45,13 @@ def binary_model(img_height: int, img_width: int,
 
     u8 = Conv3DTranspose(channels * 2, (2, 2, 2), strides=(2, 2, 2), padding='same')(c7)
     u8 = concatenate([u8, c2])
-    c8 = binary_double_conv_block(u8, channels * 2)
+    c8 = binary_double_conv_block(u8, channels)
 
-    outputs = Conv3D(num_classes, (1, 1, 1), activation='sigmoid')(c8)
+    u9 = Conv3DTranspose(channels * 2, (2, 2, 2), strides=(2, 2, 2), padding='same')(c8)
+    u9 = concatenate([u9, c1])
+    c9 = binary_double_conv_block(u9, channels * 2)
+
+    outputs = Conv3D(num_classes, (1, 1, 1), activation='sigmoid')(c9)
 
     return Model(inputs=[inputs], outputs=[outputs])
 
@@ -59,7 +66,7 @@ def double_conv_block(x, n_filters: int, activation):
 
 def brain_tumor_model(img_height: int, img_width: int,
                       img_depth: int, img_channels: int,
-                      num_classes: int, activation=LeakyReLU(alpha=0.05), channels: int = 32):
+                      num_classes: int, activation='relu', channels: int = 32):
     inputs = Input((img_height, img_width, img_depth, img_channels))
 
     c1 = double_conv_block(inputs, channels * 2, activation)
@@ -83,6 +90,52 @@ def brain_tumor_model(img_height: int, img_width: int,
 
     u3 = Conv3DTranspose(channels * 2, (2, 2, 2), strides=(2, 2, 2), padding='same')(c6)
     u3 = concatenate([u3, c1])
+    c7 = double_conv_block(u3, channels * 2, activation)
+
+    outputs = Conv3D(num_classes, (1, 1, 1), activation='softmax')(c7)
+
+    return Model(inputs=[inputs], outputs=[outputs])
+
+
+def attention_gate(x, g, channels):
+    """
+    Based on the attention gate in the attention UNet
+    x: The feature map in the skip connection
+    g: The feature map before the transposed convolution
+    """
+    x1 = Conv3D(channels, (1, 1, 1), strides=(2, 2, 2), padding='same')(x)
+    g = Conv3D(channels, (1, 1, 1), padding='same')(g)
+    a = ReLU(x1+g)
+    a = Conv3D(1, (1, 1, 1), activation='sigmoid')(a)
+    return x * a
+
+
+def attention_brain_tumor_model(img_height: int, img_width: int,
+                                img_depth: int, img_channels: int,
+                                num_classes: int, activation='relu', channels: int = 32):
+    inputs = Input((img_height, img_width, img_depth, img_channels))
+
+    c1 = double_conv_block(inputs, channels * 2, activation)
+    p1 = Conv3D(channels * 2, (3, 3, 3), strides=(2, 2, 2), activation=activation, padding='same')(c1)
+
+    c2 = double_conv_block(p1, channels * 4, activation)
+    p2 = Conv3D(channels * 4, (3, 3, 3), strides=(2, 2, 2), activation=activation, padding='same')(c2)
+
+    c3 = double_conv_block(p2, channels * 8, activation)
+    p3 = Conv3D(channels * 8, (3, 3, 3), strides=(2, 2, 2), activation=activation, padding='same')(c3)
+
+    c4 = double_conv_block(p3, channels * 10, activation)
+
+    u1 = Conv3DTranspose(channels * 8, (2, 2, 2), strides=(2, 2, 2), padding='same')(c4)
+    u1 = concatenate([u1, attention_gate(c3, u1, channels * 8)])
+    c5 = double_conv_block(u1, channels * 8, activation)
+
+    u2 = Conv3DTranspose(channels * 4, (2, 2, 2), strides=(2, 2, 2), padding='same')(c5)
+    u2 = concatenate([u2, attention_gate(c2, u2, channels * 4)])
+    c6 = double_conv_block(u2, channels * 4, activation)
+
+    u3 = Conv3DTranspose(channels * 2, (2, 2, 2), strides=(2, 2, 2), padding='same')(c6)
+    u3 = concatenate([u3, attention_gate(c1, u3, channels * 2)])
     c7 = double_conv_block(u3, channels * 2, activation)
 
     outputs = Conv3D(num_classes, (1, 1, 1), activation='softmax')(c7)

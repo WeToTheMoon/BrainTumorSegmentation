@@ -75,7 +75,7 @@ def main():
 
     brain_tumor_model.fit(train_img_datagen,
                           steps_per_epoch=steps_per_epoch,
-                          epochs=300, verbose=1,
+                          epochs=200, verbose=1,
                           validation_data=val_img_datagen,
                           validation_steps=val_steps_per_epoch)
 

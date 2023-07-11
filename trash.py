@@ -1,4 +1,4 @@
- # Print the dice score of each test sample
+# Print the dice score of each test sample
 #
 # test_imgs = glob(r"C:\Users\kesch\OneDrive\Desktop\BrainTumorSeg\val\images\*.npy")
 #

@@ -3,6 +3,7 @@ from numpy import ndarray
 from utils.augmentations import combine_aug, binary_combine_aug
 import random
 import os
+from matplotlib import pyplot as plt
 
 
 def load_img(img_dir: str, img_list: list[str]) -> ndarray:
@@ -33,7 +34,8 @@ def load_img_cropped(img_dir: str, img_list: list[str]) -> list[ndarray]:
         if image_name.split('.')[1] == 'npy':
             image = np.load(os.path.join(img_dir, image_name))
             if "image" in image_name:
-                images.append(image[:, :, :, :-1])
+                images.append(image)
+                #Change back to -1 when using BrainTumorSeg
             else:
                 images.append(image)
     return images
@@ -54,10 +56,10 @@ def global_extraction(img: ndarray | list[ndarray], mask: ndarray | list[ndarray
 
         or_r = np.random.randint(0, img_temp.shape[0] - 47)
         or_c = np.random.randint(0, img_temp.shape[1] - 47)
+        or_d = np.random.randint(0, img_temp.shape[2] - 47)
 
-        img_temp = img_temp[or_r:or_r + 48, or_c:or_c + 48, :, :]
-        mask_temp = mask_temp[or_r:or_r + 48, or_c:or_c + 48, :, :]
-
+        img_temp = img_temp[or_r:or_r + 48, or_c:or_c + 48, or_d:or_d + 48, :]
+        mask_temp = mask_temp[or_r:or_r + 48, or_c:or_c + 48, or_d:or_d + 48, :]
         images.append(img_temp)
         masks.append(mask_temp)
 
@@ -99,9 +101,9 @@ def cropped_image_loader(img_dir: str, img_list: list[str],
 
             x, y = global_extraction(x, y)
 
-            region_based = model.predict(x, verbose=0)
-
-            x = np.concatenate((x, region_based), axis=-1)
+            # region_based = model.predict(x, verbose=0)
+            #
+            # x = np.concatenate((x, region_based), axis=-1)
 
             combine_aug(x, y)
             batch_start += batch_size
@@ -135,9 +137,9 @@ def cropped_image_loader_val(img_dir: str, img_list: list[str],
             Y = load_img_cropped(mask_dir, mask_list[batch_start:limit])
             X, Y = global_extraction(X, Y)
 
-            region_based = model.predict(X, verbose=0)
-
-            X = np.concatenate((X, region_based), axis=-1)
+            # region_based = model.predict(X, verbose=0)
+            #
+            # X = np.concatenate((X, region_based), axis=-1)
 
             batch_start += batch_size
             batch_end += batch_size

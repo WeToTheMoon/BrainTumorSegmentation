@@ -4,7 +4,6 @@ from glob import glob
 from os import path
 
 from keras.callbacks import ModelCheckpoint
-from tensorflow import keras
 from keras.layers import ELU
 
 from utils.loader import image_loader_val, image_loader
@@ -12,7 +11,7 @@ from utils.loss import dice_coef_loss
 from utils.metrics import dice_coef
 from utils.models import binary_model
 from utils.optimizers import LH_Adam
-
+from utils.preprocessing import create_cropped_dataset_from_roi
 
 def main():
     arg_parser = ArgumentParser()
@@ -73,16 +72,18 @@ def main():
     optim = LH_Adam(learning_rate)
 
     model.compile(optimizer=optim, loss=dice_coef_loss, metrics=[dice_coef])
-
+    model.load_weights("weights/BinaryModel.hdf5")
     callback = ModelCheckpoint(filepath=args.binary_weights, save_weights_only=True, save_best_only=True)
 
-    model.fit(train_img_datagen,
-              steps_per_epoch=steps_per_epoch,
-              epochs=200,
-              verbose=1,
-              validation_data=val_img_datagen,
-              validation_steps=val_steps_per_epoch,
-              callbacks=[callback])
+    # model.fit(train_img_datagen,
+    #           steps_per_epoch=steps_per_epoch,
+    #           epochs=200,
+    #           verbose=1,
+    #           validation_data=val_img_datagen,
+    #           validation_steps=val_steps_per_epoch,
+    #           callbacks=[callback])
+
+    create_cropped_dataset_from_roi(model, r"C:\Users\kesch\Desktop\BratsSegBinary", r"C:\Users\kesch\Desktop\Full_Segmentation", r"C:\Users\kesch\Desktop\TumorSegmentation")
 
 
 if __name__ == '__main__':
