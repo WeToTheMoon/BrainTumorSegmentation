@@ -100,7 +100,7 @@ def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
     d = min(128, np.amax(loc[1]) + 12)
     e = max(0, np.amin(loc[2]) - 12)
     f = min(128, np.amax(loc[2]) + 12)
-    return img[a:b, c:d, e:f], mask[a:b, c:d, e:f]
+    return np.concatenate((img[a:b, c:d, e:f], binary_mask[a:b, c:d, e:f]), axis=-1), mask[a:b, c:d, e:f]
 
 
 def create_cropped_dataset_from_roi(model, input_dataset, full_mask_dir, output_dataset):
