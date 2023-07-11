@@ -1,4 +1,4 @@
-from keras.layers import Conv3D, Conv3DTranspose, Input, concatenate, LeakyReLU, ReLU
+from keras.layers import Conv3D, Conv3DTranspose, Input, concatenate, LeakyReLU, ReLU, Dense, UpSampling3D
 from keras.models import Model
 from tensorflow_addons.layers import InstanceNormalization
 
@@ -104,9 +104,11 @@ def attention_gate(x, g, channels):
     g: The feature map before the transposed convolution
     """
     x1 = Conv3D(channels, (1, 1, 1), strides=(2, 2, 2), padding='same')(x)
-    g = Conv3D(channels, (1, 1, 1), padding='same')(g)
-    a = ReLU(x1+g)
+    g1 = Conv3D(channels, (1, 1, 1), padding='same')(g)
+    a = x1+g1
+    a = Dense(1, 'relu')(a)
     a = Conv3D(1, (1, 1, 1), activation='sigmoid')(a)
+    a = UpSampling3D((2, 2, 2))(a)
     return x * a
 
 
@@ -127,15 +129,15 @@ def attention_brain_tumor_model(img_height: int, img_width: int,
     c4 = double_conv_block(p3, channels * 10, activation)
 
     u1 = Conv3DTranspose(channels * 8, (2, 2, 2), strides=(2, 2, 2), padding='same')(c4)
-    u1 = concatenate([u1, attention_gate(c3, u1, channels * 8)])
+    u1 = concatenate([u1, attention_gate(c3, c4, channels * 8)])
     c5 = double_conv_block(u1, channels * 8, activation)
 
     u2 = Conv3DTranspose(channels * 4, (2, 2, 2), strides=(2, 2, 2), padding='same')(c5)
-    u2 = concatenate([u2, attention_gate(c2, u2, channels * 4)])
+    u2 = concatenate([u2, attention_gate(c2, c5, channels * 4)])
     c6 = double_conv_block(u2, channels * 4, activation)
 
     u3 = Conv3DTranspose(channels * 2, (2, 2, 2), strides=(2, 2, 2), padding='same')(c6)
-    u3 = concatenate([u3, attention_gate(c1, u3, channels * 2)])
+    u3 = concatenate([u3, attention_gate(c1, c6, channels * 2)])
     c7 = double_conv_block(u3, channels * 2, activation)
 
     outputs = Conv3D(num_classes, (1, 1, 1), activation='softmax')(c7)

@@ -6,7 +6,8 @@ from glob import glob
 from utils.loader import cropped_image_loader, cropped_image_loader_val
 from utils.loss import log_cosh_dice_loss
 from utils.metrics import dice_coef_multilabel, peritumoral_edema, enhancing_tumor, core_tumor
-from utils.models import brain_tumor_model as BrainTumorModel, binary_model as BinaryModel
+from utils.models import attention_brain_tumor_model as BrainTumorAttentionModel
+from utils.models import binary_model as BinaryModel
 from utils.optimizers import LH_Adam
 
 
@@ -55,7 +56,7 @@ def main():
     binary_model = BinaryModel(48, 48, 128, 4, 1, 20)
     binary_model.load_weights(args.binary_weights)
 
-    brain_tumor_model = BrainTumorModel(48, 48, 128, 5, 4)
+    brain_tumor_model = BrainTumorAttentionModel(48, 48, 128, 4, 4)
 
     batch_size = 6
 
