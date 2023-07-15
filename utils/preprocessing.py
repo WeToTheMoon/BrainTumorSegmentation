@@ -1,9 +1,5 @@
-import os.path
-
 from numpy import ndarray
 import numpy as np
-import nibabel as nib
-from tqdm import tqdm, trange
 
 
 def calc_z_score(img: ndarray, img_height: int = 128, img_width: int = 128, img_depth: int = 128) -> ndarray:
@@ -42,50 +38,6 @@ def normalize_mri_data(t1: ndarray, t1ce: ndarray, t2: ndarray, flair: ndarray, 
     return data, mask
 
 
-def load_dataset_from_patient_data(patients_directory: str, output_dataset: str,
-                                   train_dir: str = "train", val_dir: str = "val") -> None:
-    if not os.path.isdir(patients_directory):
-        raise FileNotFoundError("The Patients directory isn't a valid directory")
-
-    all_patients = [os.path.join(patients_directory, patient) for patient in os.listdir(patients_directory) if
-                    os.path.isdir(os.path.join(patients_directory, patient))]
-
-    # Randomly shuffle the images
-    np.random.shuffle(all_patients)
-
-    train_patients = all_patients[:int(len(all_patients) * .80)]
-    val_patients = all_patients[int(len(all_patients) * .80):]
-
-    for patient_list, save_directory in [(train_patients, train_dir), (val_patients, val_dir)]:
-        print(f"Collecting dataset for the {save_directory} directory")
-        i = 0
-        for patient_path in tqdm(patient_list):
-            i += 1
-            mri_data = {}
-            for sub_file in os.listdir(patient_path):
-                file_path = os.path.join(patient_path, sub_file)
-                if "_t1." in file_path:
-                    mri_data["t1"] = nib.load(file_path).get_fdata()
-                elif "_t1ce." in file_path:
-                    mri_data["t1ce"] = nib.load(file_path).get_fdata()
-                elif "_t2." in file_path:
-                    mri_data["t2"] = nib.load(file_path).get_fdata()
-                elif "_flair." in file_path:
-                    mri_data["flair"] = nib.load(file_path).get_fdata()
-                elif "_seg." in file_path:
-                    mri_data["mask"] = nib.load(file_path).get_fdata()
-
-            if len(mri_data) != 5:
-                raise FileExistsError("Missing one or more required MRI modalities")
-
-            data, mask = normalize_mri_data(**mri_data)
-
-            os.path.join(output_dataset, save_directory, "images", f"image-{i}.npy")
-
-            np.save(os.path.join(output_dataset, save_directory, "images", f"image-{i}.npy"), data)
-            np.save(os.path.join(output_dataset, save_directory, "masks", f"mask-{i}.npy"), mask)
-
-
 def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
     img_input = np.expand_dims(img, axis=0)
 
@@ -103,33 +55,11 @@ def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
     return img[a:b, c:d, e:f], mask[a:b, c:d, e:f]
 
 
-def create_cropped_dataset_from_roi(input_dataset: str, input_train_dir: str, input_val_dir: str, output_dataset: str,
-                                    model, output_train_dir: str = "train", output_val_dir: str = "val") -> None:
-    if not all([v in os.listdir(input_dataset) for v in [input_train_dir, input_val_dir]]):
-        raise FileNotFoundError("Missing either the train or validation directory from within the dataset directory")
-
-    if not all([v in os.listdir(os.path.join(input_dataset, input_train_dir))
-                and v in os.listdir(os.path.join(input_dataset, input_val_dir)) for v in ["images", "masks"]]):
-        raise FileNotFoundError(
-            "The training and/or validation directories are missing the 'images' and/or 'masks' directories")
-
-    for input_section_path, output_section_path in [(input_train_dir, output_train_dir),
-                                                    (input_val_dir, output_val_dir)]:
-        base_section_path = os.path.join(input_dataset, input_section_path)
-        input_images_dir = os.path.join(base_section_path, "images")
-        input_masks_dir = os.path.join(base_section_path, "masks")
-
-        if len(os.listdir(input_images_dir)) != len(os.listdir(input_masks_dir)):
-            raise ValueError("The images and masks directories don't have the same lengths")
-
-        print(f"Collecting and converting dataset for the {input_images_dir} directory")
-        # The images and masks directories should have the same lengths
-        for i in trange(len(os.listdir(input_images_dir))):
-            input_image = np.load(os.path.join(input_images_dir, f"image-{i}.npy"))
-            input_mask = np.load(os.path.join(input_masks_dir, f"mask-{i}.npy"))
-
-            cropped_image, cropped_mask = roi_crop(input_image, input_mask, model)
-
-            np.save(os.path.join(output_dataset, output_section_path, "images", f"image-cropped-{i}.npy"),
-                    cropped_image)
-            np.save(os.path.join(output_dataset, output_section_path, "masks", f"mask-cropped-{i}.npy"), cropped_mask)
+def mask_to_binary_mask(mask: ndarray) -> ndarray:
+    mask = mask.copy()
+    for batch in range(mask.shape[0]):
+        for height in range(mask.shape[1]):
+            for width in range(mask.shape[2]):
+                for depth in range(mask.shape[3]):
+                    mask[batch][height][width][depth] = 0 if mask[batch][height][width][depth] == [1, 0, 0, 0] else 1
+    return mask
