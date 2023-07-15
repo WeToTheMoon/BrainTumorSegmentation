@@ -1,3 +1,4 @@
+import ctypes
 import glob
 import os.path
 from numpy import ndarray
@@ -192,6 +193,14 @@ def create_cropped_dataset_from_dataset(dataset_directory: str, model, output_da
 def create_binary_dataset_from_cropped_dataset(cropped_dataset: str, output_dataset_directory: str) -> None:
     if not os.path.isdir(cropped_dataset):
         raise NotADirectoryError("The cropped directory is not a valid directory")
+
+    try:
+        is_admin = (os.getuid() == 0)
+    except AttributeError:
+        is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
+
+    if not is_admin and os.name == "nt":
+        raise PermissionError("Creating the binary dataset uses SymLinks so the script must be run as an admin")
 
     for category in ["train", "val"]:
         # Create a symlink for the images because they don't change
