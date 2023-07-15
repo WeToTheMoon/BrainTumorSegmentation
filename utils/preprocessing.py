@@ -143,10 +143,19 @@ def create_dataset_from_patients_directory(patients_directory: str, output_datas
     val_mri_data = all_mri_data[int(len(all_mri_data) * .80):]
 
     for category, category_mri_data in [("train", train_mri_data), ("val", val_mri_data)]:
+        output_images_directory = os.path.join(output_dataset_directory, category, "images")
+        output_masks_directory = os.path.join(output_dataset_directory, category, "masks")
+
+        if not os.path.isdir(output_images_directory):
+            os.makedirs(output_images_directory)
+
+        if not os.path.isdir(output_masks_directory):
+            os.makedirs(output_masks_directory)
+
         print(f"Saving {category.title()} MRI Data")
         for patient_index, image, mask in tqdm(category_mri_data):
-            np.save(os.path.join(output_dataset_directory, category, "images", f"image-{patient_index}.npy"), image)
-            np.save(os.path.join(output_dataset_directory, category, "masks", f"mask-{patient_index}.npy"), mask)
+            np.save(os.path.join(output_images_directory, "images", f"image-{patient_index}.npy"), image)
+            np.save(os.path.join(output_masks_directory, f"mask-{patient_index}.npy"), mask)
 
 
 def create_cropped_dataset_from_dataset(dataset_directory: str, model, output_dataset_directory: str) -> None:
@@ -160,6 +169,15 @@ def create_cropped_dataset_from_dataset(dataset_directory: str, model, output_da
         if len(all_images) != len(all_masks):
             raise ValueError(f"There are not the same number of images and masks in the {category} category")
 
+        output_images_directory = os.path.join(output_dataset_directory, category, "images")
+        output_masks_directory = os.path.join(output_dataset_directory, category, "masks")
+
+        if not os.path.isdir(output_images_directory):
+            os.makedirs(output_images_directory)
+
+        if not os.path.isdir(output_masks_directory):
+            os.makedirs(output_masks_directory)
+
         print(f"Cropping and saving dataset for the {category} category")
         for img_path, mask_path in tqdm(zip(all_images, all_masks)):
             img_data = np.load(img_path)
@@ -167,10 +185,8 @@ def create_cropped_dataset_from_dataset(dataset_directory: str, model, output_da
 
             cropped_image, cropped_mask = roi_crop(img_data, mask_data, model)
 
-            np.save(os.path.join(output_dataset_directory, category, "images", os.path.basename(img_path)),
-                    cropped_image)
-            np.save(os.path.join(output_dataset_directory, category, "masks", os.path.basename(mask_path)),
-                    cropped_mask)
+            np.save(os.path.join(output_images_directory, os.path.basename(img_path)), cropped_image)
+            np.save(os.path.join(output_masks_directory, os.path.basename(mask_path)), cropped_mask)
 
 
 def create_binary_dataset_from_cropped_dataset(cropped_dataset: str, output_dataset_directory: str) -> None:
@@ -181,6 +197,9 @@ def create_binary_dataset_from_cropped_dataset(cropped_dataset: str, output_data
         # Create a symlink for the images because they don't change
         os.symlink(os.path.join(cropped_dataset, category, "images"),
                    os.path.join(output_dataset_directory, category, "images"), target_is_directory=True)
+        output_masks_directory = os.path.join(output_dataset_directory, category, "masks")
+        if not os.path.isdir(output_masks_directory):
+            os.makedirs(output_masks_directory)
 
         all_masks = glob(os.path.join(cropped_dataset, category, 'masks', "*.npy"))
 
@@ -190,7 +209,7 @@ def create_binary_dataset_from_cropped_dataset(cropped_dataset: str, output_data
 
             binary_mask_data = mask_to_binary_mask(mask_data)
 
-            np.save(os.path.join(output_dataset_directory, category, "masks", os.path.basename(mask_path)),
+            np.save(os.path.join(output_masks_directory, os.path.basename(mask_path)),
                     binary_mask_data)
 
 
