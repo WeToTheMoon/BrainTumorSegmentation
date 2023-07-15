@@ -4,7 +4,7 @@ import os.path
 from numpy import ndarray
 import numpy as np
 import nibabel as nib
-from tqdm import tqdm, trange
+from tqdm import tqdm
 from glob import glob
 
 
@@ -205,7 +205,8 @@ def create_binary_dataset_from_cropped_dataset(cropped_dataset: str, output_data
     for category in ["train", "val"]:
         # Create a symlink for the images because they don't change
         os.symlink(os.path.realpath(os.path.join(cropped_dataset, category, "images")),
-                   os.path.realpath(os.path.join(output_dataset_directory, category, "images")), target_is_directory=True)
+                   os.path.realpath(os.path.join(output_dataset_directory, category, "images")),
+                   target_is_directory=True)
 
         output_masks_directory = os.path.join(output_dataset_directory, category, "masks")
         if not os.path.isdir(output_masks_directory):
