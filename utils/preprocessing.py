@@ -222,6 +222,3 @@ def create_binary_dataset_from_cropped_dataset(cropped_dataset: str, output_data
 
             np.save(os.path.join(output_masks_directory, os.path.basename(mask_path)),
                     binary_mask_data)
-
-
-
