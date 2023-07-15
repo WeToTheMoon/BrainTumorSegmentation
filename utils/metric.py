@@ -1,6 +1,5 @@
 import keras.backend as K
-import numpy as np
-import tensorflow as tf
+
 
 def dice_coef(y_true, y_pred, smooth=1):
     """

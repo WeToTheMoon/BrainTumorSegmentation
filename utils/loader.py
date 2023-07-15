@@ -3,7 +3,6 @@ from numpy import ndarray
 from utils.augmentations import combine_aug, binary_combine_aug
 import random
 import os
-from matplotlib import pyplot as plt
 
 
 def load_img(img_dir: str, img_list: list[str]) -> ndarray:
