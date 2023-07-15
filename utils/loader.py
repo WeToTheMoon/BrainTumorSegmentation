@@ -35,7 +35,6 @@ def load_img_cropped(img_dir: str, img_list: list[str]) -> list[ndarray]:
             image = np.load(os.path.join(img_dir, image_name))
             if "image" in image_name:
                 images.append(image[..., :-1])
-                #Change back to -1 when using BrainTumorSeg
             else:
                 images.append(image)
     return images
@@ -57,21 +56,21 @@ def global_extraction(img: ndarray | list[ndarray], mask: ndarray | list[ndarray
         or_r = np.random.randint(0, img_temp.shape[0] - 47)
         or_c = np.random.randint(0, img_temp.shape[1] - 47)
         or_d = np.random.randint(0, img_temp.shape[2] - 47)
-
-        img_temp = img_temp[or_r:or_r + 48, or_c:or_c + 48, :, :]
-        mask_temp = mask_temp[or_r:or_r + 48, or_c:or_c + 48, :, :]
+        img_temp = img_temp[or_r:or_r + 48, or_c:or_c + 48, or_d:or_d + 48, :]
+        mask_temp = mask_temp[or_r:or_r + 48, or_c:or_c + 48, or_d:or_d + 48, :]
         images.append(img_temp)
         masks.append(mask_temp)
 
+
+
     stacked_images = np.stack(images, axis=0)
     stacked_masks = np.stack(masks, axis=0)
-
     return stacked_images, stacked_masks
 
 
 def cropped_image_loader(img_dir: str, img_list: list[str],
                          mask_dir: str, mask_list: list[dir],
-                         batch_size: int, model) -> tuple[ndarray, ndarray]:
+                         batch_size: int) -> tuple[ndarray, ndarray]:
     """
     Generator for the images when predicting the multiclass mask in the train set.
 
@@ -96,24 +95,27 @@ def cropped_image_loader(img_dir: str, img_list: list[str],
         while batch_start < L:
             limit = min(batch_end, L)
 
-            x = load_img_cropped(img_dir, img_list[batch_start:limit])
-            y = load_img_cropped(mask_dir, mask_list[batch_start:limit])
+            X = load_img_cropped(img_dir, img_list[batch_start:limit])
+            Y = load_img_cropped(mask_dir, mask_list[batch_start:limit])
 
-            x, y = global_extraction(x, y)
+            X, Y = global_extraction(X, Y)
+
+            print(Y.shape)
+
             # region_based = model.predict(x, verbose=0)
             #
             # x = np.concatenate((x, region_based), axis=-1)
 
-            combine_aug(x, y)
+            combine_aug(X, Y)
             batch_start += batch_size
             batch_end += batch_size
 
-            yield x, y
+            yield X, Y
 
 
 def cropped_image_loader_val(img_dir: str, img_list: list[str],
                              mask_dir: str, mask_list: list[dir],
-                             batch_size: int, model) -> tuple[ndarray, ndarray]:
+                             batch_size: int) -> tuple[ndarray, ndarray]:
     """
     Generator for the images when predicting the multiclass mask in the validation set.
 
@@ -134,6 +136,7 @@ def cropped_image_loader_val(img_dir: str, img_list: list[str],
 
             X = load_img_cropped(img_dir, img_list[batch_start:limit])
             Y = load_img_cropped(mask_dir, mask_list[batch_start:limit])
+
             X, Y = global_extraction(X, Y)
 
             # region_based = model.predict(X, verbose=0)

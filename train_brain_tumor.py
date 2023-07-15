@@ -4,12 +4,11 @@ from os import path
 from glob import glob
 
 from utils.loader import cropped_image_loader, cropped_image_loader_val
-from utils.loss import log_cosh_dice_loss
-from utils.metrics import dice_coef_multilabel, peritumoral_edema, enhancing_tumor, core_tumor
+from utils.loss import log_cosh_dice_loss, log_cosh_dice_loss_binary
+from utils.metric import dice_coef_multilabel, peritumoral_edema, enhancing_tumor, core_tumor, dice_coef
 from utils.models import attention_brain_tumor_model as BrainTumorAttentionModel
-from utils.models import binary_model as BinaryModel
 from utils.optimizers import LH_Adam
-
+from keras.callbacks import ModelCheckpoint
 
 def main():
     arg_parser = ArgumentParser()
@@ -53,32 +52,33 @@ def main():
     val_img_list = os.listdir(val_img_dir)
     val_mask_list = os.listdir(val_mask_dir)
 
-    binary_model = BinaryModel(48, 48, 128, 4, 1, 20)
-    binary_model.load_weights(args.binary_weights)
-
-    brain_tumor_model = BrainTumorAttentionModel(48, 48, 128, 4, 4)
-
     batch_size = 6
 
     steps_per_epoch = len(train_img_list) // batch_size
     val_steps_per_epoch = len(val_img_list) // batch_size
 
-    train_img_datagen = cropped_image_loader(train_img_dir, train_img_list, train_mask_dir, train_mask_list, batch_size,
-                                             binary_model)
-    val_img_datagen = cropped_image_loader_val(val_img_dir, val_img_list, val_mask_dir, val_mask_list, batch_size,
-                                               binary_model)
+    train_img_datagen = cropped_image_loader(train_img_dir, train_img_list, train_mask_dir, train_mask_list, batch_size)
+
+    val_img_datagen = cropped_image_loader_val(val_img_dir, val_img_list, val_mask_dir, val_mask_list, batch_size)
+
+    brain_tumor_model = BrainTumorAttentionModel(48, 48, 48, 4, 4)
 
     learning_rate = 0.0003
     optim = LH_Adam(learning_rate)
 
-    brain_tumor_model.compile(optimizer=optim, loss=log_cosh_dice_loss, metrics=[dice_coef_multilabel, core_tumor,
-                                                                                 peritumoral_edema, enhancing_tumor])
+    brain_tumor_model.compile(optimizer=optim, loss=log_cosh_dice_loss_binary, metrics=[dice_coef])
 
-    brain_tumor_model.fit(train_img_datagen,
-                          steps_per_epoch=steps_per_epoch,
-                          epochs=200, verbose=1,
-                          validation_data=val_img_datagen,
-                          validation_steps=val_steps_per_epoch)
+    callback = ModelCheckpoint(filepath=args.binary_weights, save_weights_only=True, save_best_only=True)
+
+    history = brain_tumor_model.fit(train_img_datagen,
+                              steps_per_epoch=steps_per_epoch,
+                              epochs=500, verbose=1,
+                              validation_data=val_img_datagen,
+                              validation_steps=val_steps_per_epoch)
+
+    print(max(history.history["val_dice_coef_multilabel"]))
+
+    # Brain tumor attention model with self attention
 
 
 if __name__ == '__main__':

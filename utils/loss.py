@@ -1,6 +1,5 @@
 import tensorflow as tf
-from utils.metrics import dice_coef_multilabel
-from utils.metrics import dice_coef
+from utils.metric import dice_coef_multilabel, dice_coef
 
 
 def CE(y_true, y_pred):
@@ -23,7 +22,7 @@ def dice_loss(y_true, y_pred):
     return 1 - dice_coef_multilabel(y_true, y_pred)
 
 
-def dice_coef_loss(y_true, y_pred):
+def dice_loss_binary(y_true, y_pred):
     """
     Gets the dice loss for the binary labels.
 
@@ -51,5 +50,5 @@ def log_cosh_dice_loss_binary(y_true, y_pred):
     :param y_true:
     :param y_pred:
     """
-    x = dice_coef_loss(y_true, y_pred)
+    x = dice_loss_binary(y_true, y_pred)
     return tf.math.log((tf.exp(x) + tf.exp(-x)) / 2.0)

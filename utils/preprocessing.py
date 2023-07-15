@@ -6,7 +6,7 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm, trange
 
-import glob
+from glob import glob
 
 
 def calc_z_score(img: ndarray, img_height: int, img_width: int, img_depth: int) -> ndarray:
@@ -92,7 +92,7 @@ def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
 
     binary_mask = model.predict(img_input)
     binary_mask = binary_mask[0, :, :, :, 0]
-
+    binary_mask = np.expand_dims(binary_mask, -1)
     loc = np.where(binary_mask == 1)
     a = max(0, np.amin(loc[0]) - 12)
     b = min(128, np.amax(loc[0]) + 12)
@@ -100,66 +100,34 @@ def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
     d = min(128, np.amax(loc[1]) + 12)
     e = max(0, np.amin(loc[2]) - 12)
     f = min(128, np.amax(loc[2]) + 12)
-    return np.concatenate((img[a:b, c:d, e:f], binary_mask[a:b, c:d, e:f]), axis=-1), mask[a:b, c:d, e:f]
+
+    img1 = np.concatenate((img[a:b, c:d, e:f], binary_mask[a:b, c:d, e:f]), axis=-1)
+    return img1, mask[a:b, c:d, e:f]
 
 
-def create_cropped_dataset_from_roi(model, input_dataset, full_mask_dir, output_dataset):
-    train_imgs = glob.glob(input_dataset + "\\train\images\*.npy")
-    train_msks = glob.glob(input_dataset + "\\train\masks\*.npy")
-    val_imgs = glob.glob(input_dataset + "\\val\images\*.npy")
-    val_msks = glob.glob(input_dataset + "\\val\masks\*.npy")
+def create_cropped_dataset_from_roi(input_dataset: str, output_dataset: str, train_dir: str = "train", val_dir: str = "val", model=None):
+    train_images = glob(f"{input_dataset}/{train_dir}/images/*.npy")
+    train_masks = glob(f"{input_dataset}/{train_dir}/masks/*.npy")
+    val_images = glob(f"{input_dataset}/{val_dir}/images/*.npy")
+    val_masks = glob(f"{input_dataset}/{val_dir}/masks/*.npy")
 
-    for i in zip(train_imgs, train_msks):
-        for j in glob.glob(full_mask_dir + "\\train\masks\*.npy"):
-            if i[1].split('\\')[-1] == j.split('\\')[-1]:
-                mask_loc = j
-        img = np.load(i[0])
-        msk = np.load(mask_loc)
-        cropped_img, cropped_msk = roi_crop(img, msk, model)
-        print(cropped_img.shape)
-        np.save(output_dataset + "\\train\images\\" + i[0].split('\\')[-1], cropped_img)
-        np.save(output_dataset + "\\train\masks\\" + i[1].split('\\')[-1], cropped_msk)
+    print("Processing Training Images and Masks")
+    for img_path, mask_path in tqdm(zip(train_images, train_masks)):
+        img = np.load(img_path)
+        mask = np.load(mask_path)
 
-    for i in zip(val_imgs, val_msks):
-        for j in glob.glob(full_mask_dir + "\\val\masks\*.npy"):
-            if i[1].split('\\')[-1] == j.split('\\')[-1]:
-                mask_loc = j
-        img = np.load(i[0])
-        msk = np.load(j)
-        cropped_img, cropped_msk = roi_crop(img, msk, model)
-        np.save(output_dataset + "\\val\images\\" + i[0].split('\\')[-1], cropped_img)
-        np.save(output_dataset + "\\val\masks\\" + i[1].split('\\')[-1], cropped_msk)
+        cropped_image, cropped_mask = roi_crop(img, mask, model)
+        print(cropped_mask.shape)
+        np.save(os.path.join(output_dataset, train_dir, "images", f"{os.path.basename(img_path)}"), cropped_image)
+        np.save(os.path.join(output_dataset, train_dir, "masks", f"{os.path.basename(mask_path)}"), cropped_mask)
 
+    print("Processing Validation Images and Masks")
+    for img_path, mask_path in tqdm(zip(val_images, val_masks)):
+        img = np.load(img_path)
+        mask = np.load(mask_path)
 
-#
-# def create_cropped_dataset_from_roi(input_dataset: str, input_train_dir: str, input_val_dir: str, output_dataset: str,
-#                                     model, output_train_dir: str = "train", output_val_dir: str = "val") -> None:
-#     if not all([v in os.listdir(input_dataset) for v in [input_train_dir, input_val_dir]]):
-#         raise FileNotFoundError("Missing either the train or validation directory from within the dataset directory")
-#
-#     if not all([v in os.listdir(os.path.join(input_dataset, input_train_dir))
-#                 and v in os.listdir(os.path.join(input_dataset, input_val_dir)) for v in ["images", "masks"]]):
-#         raise FileNotFoundError(
-#             "The training and/or validation directories are missing the 'images' and/or 'masks' directories")
-#
-#     for input_section_path, output_section_path in [(input_train_dir, output_train_dir),
-#                                                     (input_val_dir, output_val_dir)]:
-#         base_section_path = os.path.join(input_dataset, input_section_path)
-#         input_images_dir = os.path.join(base_section_path, "images")
-#         input_masks_dir = os.path.join(base_section_path, "masks")
-#
-#         if len(os.listdir(input_images_dir)) != len(os.listdir(input_masks_dir)):
-#             raise ValueError("The images and masks directories don't have the same lengths")
-#
-#         print(f"Collecting and converting dataset for the {input_images_dir} directory")
-#         # The images and masks directories should have the same lengths
-#         for i in trange(len(os.listdir(input_images_dir))):
-#             input_image = np.load(os.path.join(input_images_dir, f"image_{i}.npy"))
-#             input_mask = np.load(os.path.join(input_masks_dir, f"mask_{i}.npy"))
-#
-#             cropped_image, cropped_mask = roi_crop(input_image, input_mask, model)
-#
-#             np.save(os.path.join(output_dataset, output_section_path, "images", f"image-cropped-{i}.npy"),
-#                     cropped_image)
-#             np.save(os.path.join(output_dataset, output_section_path, "masks", f"mask-cropped-{i}.npy"), cropped_mask)
+        cropped_image, cropped_mask = roi_crop(img, mask, model)
+        np.save(os.path.join(output_dataset, val_dir, "images", f"{os.path.basename(img_path)}"), cropped_image)
+        np.save(os.path.join(output_dataset, val_dir, "masks", f"{os.path.basename(mask_path)}"), cropped_mask)
+
 #

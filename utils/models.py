@@ -1,7 +1,8 @@
 from keras.layers import Conv3D, Conv3DTranspose, Input, concatenate, LeakyReLU, ReLU, Dense, UpSampling3D
 from keras.models import Model
+from keras.activations import softmax
 from tensorflow_addons.layers import InstanceNormalization
-
+import tensorflow as tf
 
 def binary_double_conv_block(x, n_filters, activation="relu"):
     x = InstanceNormalization()(x)
@@ -59,9 +60,10 @@ def binary_model(img_height: int, img_width: int,
 def double_conv_block(x, n_filters: int, activation):
     x1 = InstanceNormalization()(x)
     x1 = Conv3D(n_filters, 3, padding="same", activation=activation)(x1)
-    x2 = InstanceNormalization()(x1)
-    x2 = Conv3D(n_filters, 3, padding="same", activation=activation)(x2)
-    return x2
+    x1 = InstanceNormalization()(x1)
+    x2 = Conv3D(n_filters, 3, padding="same", activation=activation)(x1)
+    x2 = InstanceNormalization()(x2)
+    return concatenate([x1, x2])
 
 
 def brain_tumor_model(img_height: int, img_width: int,
@@ -115,6 +117,10 @@ def attention_gate(x, g, channels):
 def attention_brain_tumor_model(img_height: int, img_width: int,
                                 img_depth: int, img_channels: int,
                                 num_classes: int, activation='relu', channels: int = 32):
+    if channels == 1:
+        classifier = 'sigmoid'
+    else:
+        classifier = 'softmax'
     inputs = Input((img_height, img_width, img_depth, img_channels))
 
     c1 = double_conv_block(inputs, channels * 2, activation)
@@ -140,6 +146,6 @@ def attention_brain_tumor_model(img_height: int, img_width: int,
     u3 = concatenate([u3, attention_gate(c1, c6, channels * 2)])
     c7 = double_conv_block(u3, channels * 2, activation)
 
-    outputs = Conv3D(num_classes, (1, 1, 1), activation='softmax')(c7)
+    outputs = Conv3D(num_classes, (1, 1, 1), activation=classifier)(c7)
 
     return Model(inputs=[inputs], outputs=[outputs])
