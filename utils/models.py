@@ -1,7 +1,7 @@
 from keras.layers import Conv3D, Conv3DTranspose, Input, concatenate, Dense, UpSampling3D
 from keras.models import Model
 from tensorflow_addons.layers import InstanceNormalization
-import tensorflow as tf
+
 
 def binary_double_conv_block(x, n_filters, activation="relu"):
     x = InstanceNormalization()(x)
