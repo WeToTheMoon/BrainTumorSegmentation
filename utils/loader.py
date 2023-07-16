@@ -84,7 +84,6 @@ def cropped_image_loader(img_dir: str, img_list: list[str],
     while True:
         batch_start = 0
         batch_end = batch_size
-
         temp1 = list(zip(img_list, mask_list))
         random.shuffle(temp1)
         img_list, mask_list = zip(*temp1)
@@ -99,8 +98,6 @@ def cropped_image_loader(img_dir: str, img_list: list[str],
             Y = load_img_cropped(mask_dir, mask_list[batch_start:limit])
 
             X, Y = global_extraction(X, Y)
-
-            print(Y.shape)
 
             # region_based = model.predict(x, verbose=0)
             #

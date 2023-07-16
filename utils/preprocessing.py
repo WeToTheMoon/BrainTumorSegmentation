@@ -103,13 +103,18 @@ def mask_to_binary_mask(mask: ndarray) -> ndarray:
     :param mask: mask to convert
     :return: a binary version of the mask
     """
+    mask_temp = np.zeros((mask.shape[0], mask.shape[1], mask.shape[2], 1))
+
     for i in range(mask.shape[0]):
         for j in range(mask.shape[1]):
             for k in range(mask.shape[2]):
-                mask[i][j][k] = 0 if mask[i][j][k] == [1, 0, 0, 0] else 1
+                if mask[i][j][k][0] == 1.0:
+                    mask_temp[i][j][k] = 0.0
+                else:
+                    mask_temp[i][j][k] = 1.0
 
-    print(f"[mask_to_binary_mask] {mask.shape}")  # TODO remove me
-    return mask
+    print(f"[mask_to_binary_mask] {mask_temp.shape}")  # TODO remove me
+    return mask_temp
 
 
 def create_dataset_from_patients_directory(patients_directory: str, output_dataset_directory: str) -> None:
@@ -179,8 +184,8 @@ def create_binary_dataset_from_cropped_dataset(cropped_dataset: str, output_data
 
     for category in ["train", "val"]:
         # Create a symlink for the images because they don't change
-        os.symlink(os.path.join(cropped_dataset, category, "images"),
-                   os.path.join(output_dataset_directory, category, "images"), target_is_directory=True)
+        # os.symlink(os.path.join(cropped_dataset, category, "images"),
+        #            os.path.join(output_dataset_directory, category, "images"), target_is_directory=True)
 
         all_masks = glob(os.path.join(cropped_dataset, category, 'masks', "*.npy"))
 
@@ -194,4 +199,4 @@ def create_binary_dataset_from_cropped_dataset(cropped_dataset: str, output_data
                     binary_mask_data)
 
 
-
+create_binary_dataset_from_cropped_dataset(r"C:\Users\kesch\Desktop\TumorSegmentation", r"C:\Users\kesch\Desktop\BinaryTumorSegmentation")

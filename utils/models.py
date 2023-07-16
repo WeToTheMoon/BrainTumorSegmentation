@@ -1,6 +1,5 @@
-from keras.layers import Conv3D, Conv3DTranspose, Input, concatenate, LeakyReLU, ReLU, Dense, UpSampling3D
+from keras.layers import Conv3D, Conv3DTranspose, Input, concatenate, Dense, UpSampling3D
 from keras.models import Model
-from keras.activations import softmax
 from tensorflow_addons.layers import InstanceNormalization
 import tensorflow as tf
 
@@ -63,7 +62,7 @@ def double_conv_block(x, n_filters: int, activation):
     x1 = InstanceNormalization()(x1)
     x2 = Conv3D(n_filters, 3, padding="same", activation=activation)(x1)
     x2 = InstanceNormalization()(x2)
-    return concatenate([x1, x2])
+    return x2
 
 
 def brain_tumor_model(img_height: int, img_width: int,
@@ -121,6 +120,7 @@ def attention_brain_tumor_model(img_height: int, img_width: int,
         classifier = 'sigmoid'
     else:
         classifier = 'softmax'
+
     inputs = Input((img_height, img_width, img_depth, img_channels))
 
     c1 = double_conv_block(inputs, channels * 2, activation)
