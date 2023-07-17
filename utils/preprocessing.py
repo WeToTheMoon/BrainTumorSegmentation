@@ -6,6 +6,8 @@ import numpy as np
 import nibabel as nib
 from tqdm import tqdm
 from glob import glob
+import gzip
+import shutil
 
 
 def calc_z_score(img: ndarray) -> ndarray:
@@ -117,6 +119,31 @@ def mask_to_binary_mask(mask: ndarray) -> ndarray:
                     new_mask[i][j][k] = 1
 
     return new_mask
+
+
+def decompress_patient_folders(patient_folders_directory: str, delete_archives=True) -> None:
+    if not os.path.isdir(patient_folders_directory):
+        raise FileNotFoundError("The patient folders directory is not a valid directory")
+
+    for patient_folder_path in tqdm(os.listdir(patient_folders_directory)):
+        patient_folder_path = os.path.join(patient_folders_directory, patient_folder_path)
+        if not os.path.isdir(patient_folder_path):
+            continue
+
+        os.chdir(patient_folder_path)
+        for mri_file in os.listdir(patient_folder_path):
+            if not mri_file.endswith(".gz"):
+                continue
+
+            archive_path = os.path.abspath(mri_file)
+            mri_file_name = os.path.basename(mri_file).rsplit('.', 1)[0]
+
+            with gzip.open(archive_path, "rb") as archive_file, open(mri_file_name, "wb") as output_mri_file:
+                shutil.copyfileobj(archive_file, output_mri_file)
+
+            if delete_archives:
+                # Remove the old compressed file
+                os.remove(archive_path)
 
 
 def create_dataset_from_patients_directory(patients_directory: str, output_dataset_directory: str) -> None:
