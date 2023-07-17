@@ -39,16 +39,20 @@ def normalize_mri_data(t1: ndarray, t1ce: ndarray, t2: ndarray, flair: ndarray, 
     :param mask: Segmented mask data
     :return: Stacked MRI data and segmented mask data
     """
-    t2 = t2[56:184, 56:184, 13:141].reshape(-1, t2.shape[-1]).reshape(t2.shape)
-    t2 = calc_z_score(t2)
 
-    t1ce = t1ce[56:184, 56:184, 13:141].reshape(-1, t1ce.shape[-1]).reshape(t1ce.shape)
+    t2 = t2[56:184, 56:184, 13:141]
+    t2 = t2.reshape(-1, t2.shape[-1]).reshape(t2.shape)
+    t2 = calc_z_score(t2)
+    t1ce = t1ce[56:184, 56:184, 13:141]
+    t1ce = t1ce.reshape(-1, t1ce.shape[-1]).reshape(t1ce.shape)
     t1ce = calc_z_score(t1ce)
 
-    flair = flair[56:184, 56:184, 13:141].reshape(-1, flair.shape[-1]).reshape(flair.shape)
+    flair = flair[56:184, 56:184, 13:141]
+    flair = flair.reshape(-1, flair.shape[-1]).reshape(flair.shape)
     flair = calc_z_score(flair)
 
-    t1 = t1[56:184, 56:184, 13:141].reshape(-1, t1.shape[-1]).reshape(t1.shape)
+    t1 = t1[56:184, 56:184, 13:141]
+    t1 = t1.reshape(-1, t1.shape[-1]).reshape(t1.shape)
     t1 = calc_z_score(t1)
 
     mask = mask.astype(np.uint8)
@@ -104,13 +108,15 @@ def mask_to_binary_mask(mask: ndarray) -> ndarray:
     :param mask: mask to convert
     :return: a binary version of the mask
     """
+    new_mask = np.zeros_like(mask)
     for i in range(mask.shape[0]):
         for j in range(mask.shape[1]):
             for k in range(mask.shape[2]):
-                mask[i][j][k] = 0 if mask[i][j][k] == [1, 0, 0, 0] else 1
+                print(mask.shape)
+                if mask[i][j][k][0] != 1.0:
+                    new_mask[i][j][k] = 1
 
-    print(f"[mask_to_binary_mask] {mask.shape}")  # TODO remove me
-    return mask
+    return new_mask
 
 
 def create_dataset_from_patients_directory(patients_directory: str, output_dataset_directory: str) -> None:
@@ -121,22 +127,23 @@ def create_dataset_from_patients_directory(patients_directory: str, output_datas
     all_mri_data = []
     print("Loading MRI Data")
     for patient_index, patient_directory_name in tqdm(enumerate(os.listdir(patients_directory))):
-        patient_directory = os.path.join(patients_directory, patient_directory_name)
+        patient_path = os.path.join(patients_directory, patient_directory_name)
 
-        mri_data = {}
-        for file in os.listdir(patients_directory):
-            if "_t1." in file:
-                mri_data["t1"] = file
-            elif "_t1ce." in file:
-                mri_data["t1ce"] = file
-            elif "_t2." in file:
-                mri_data["t2"] = file
-            elif "_flair." in file:
-                mri_data["flair"] = file
-            elif "_seg." in file:
-                mri_data["mask"] = file
+        if os.path.isdir(patient_path):
+            mri_data = {}
+            for file in os.listdir(patient_path):
+                if "_t1." in file:
+                    mri_data["t1"] = file
+                elif "_t1ce." in file:
+                    mri_data["t1ce"] = file
+                elif "_t2." in file:
+                    mri_data["t2"] = file
+                elif "_flair." in file:
+                    mri_data["flair"] = file
+                elif "_seg." in file:
+                    mri_data["mask"] = file
 
-        all_mri_data.append((patient_index, *get_mri_data_from_directory(patient_directory, **mri_data)))
+            all_mri_data.append((patient_index, *get_mri_data_from_directory(patient_path, **mri_data)))
 
     np.random.shuffle(all_mri_data)
 
@@ -155,7 +162,7 @@ def create_dataset_from_patients_directory(patients_directory: str, output_datas
 
         print(f"Saving {category.title()} MRI Data")
         for patient_index, image, mask in tqdm(category_mri_data):
-            np.save(os.path.join(output_images_directory, "images", f"image-{patient_index}.npy"), image)
+            np.save(os.path.join(output_images_directory, f"image-{patient_index}.npy"), image)
             np.save(os.path.join(output_masks_directory, f"mask-{patient_index}.npy"), mask)
 
 
@@ -190,9 +197,9 @@ def create_cropped_dataset_from_dataset(dataset_directory: str, model, output_da
             np.save(os.path.join(output_masks_directory, os.path.basename(mask_path)), cropped_mask)
 
 
-def create_binary_dataset_from_cropped_dataset(cropped_dataset: str, output_dataset_directory: str) -> None:
-    if not os.path.isdir(cropped_dataset):
-        raise NotADirectoryError("The cropped directory is not a valid directory")
+def create_binary_dataset_from_dataset(input_dataset: str, output_dataset_directory: str) -> None:
+    if not os.path.isdir(input_dataset):
+        raise NotADirectoryError("The dataset directory is not a valid directory")
 
     try:
         is_admin = (os.getuid() == 0)
@@ -203,8 +210,11 @@ def create_binary_dataset_from_cropped_dataset(cropped_dataset: str, output_data
         raise PermissionError("Creating the binary dataset uses SymLinks so the script must be run as an admin")
 
     for category in ["train", "val"]:
+        if not os.path.isdir(os.path.join(output_dataset_directory, category)):
+            os.makedirs(os.path.join(output_dataset_directory, category))
+
         # Create a symlink for the images because they don't change
-        os.symlink(os.path.realpath(os.path.join(cropped_dataset, category, "images")),
+        os.symlink(os.path.realpath(os.path.join(input_dataset, category, "images")),
                    os.path.realpath(os.path.join(output_dataset_directory, category, "images")),
                    target_is_directory=True)
 
@@ -212,7 +222,7 @@ def create_binary_dataset_from_cropped_dataset(cropped_dataset: str, output_data
         if not os.path.isdir(output_masks_directory):
             os.makedirs(output_masks_directory)
 
-        all_masks = glob(os.path.join(cropped_dataset, category, 'masks', "*.npy"))
+        all_masks = glob(os.path.join(input_dataset, category, 'masks', "*.npy"))
 
         print(f"Converting masks to binary masks for the {category} category")
         for mask_path in tqdm(all_masks):
