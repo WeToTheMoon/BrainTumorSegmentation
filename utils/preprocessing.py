@@ -111,12 +111,11 @@ def mask_to_binary_mask(mask: ndarray) -> ndarray:
     :param mask: mask to convert
     :return: a binary version of the mask
     """
-    new_mask = np.zeros_like(mask)
+    new_mask = np.zeros(mask.shape[:-1])
     for i in range(mask.shape[0]):
         for j in range(mask.shape[1]):
             for k in range(mask.shape[2]):
-                print(mask.shape)
-                if mask[i][j][k][0] != 1.0:
+                if mask[i][j][k][0] != 1:
                     new_mask[i][j][k] = 1
 
     return new_mask
