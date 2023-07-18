@@ -11,7 +11,7 @@ from utils.loss import dice_loss_binary
 from utils.metric import dice_coef
 from utils.models import binary_model
 from utils.optimizers import LH_Adam
-from utils.preprocessing import create_cropped_dataset_from_roi
+
 
 def main():
     arg_parser = ArgumentParser()
@@ -83,8 +83,6 @@ def main():
               validation_steps=val_steps_per_epoch,
               callbacks=[callback])
 
-
-    create_cropped_dataset_from_roi(r"C:\Users\kesch\Desktop\Full_Segmentation", r"C:\Users\kesch\Desktop\TumorSegmentation", model=model)
 
 if __name__ == '__main__':
     main()
