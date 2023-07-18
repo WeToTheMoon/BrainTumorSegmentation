@@ -92,12 +92,13 @@ def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
     binary_mask = binary_mask[0, :, :, :, 0]
     binary_mask = np.expand_dims(binary_mask, -1)
     loc = np.where(binary_mask == 1)
-    a = max(0, np.amin(loc[0]) - 12)
-    b = min(128, np.amax(loc[0]) + 12)
-    c = max(0, np.amin(loc[1]) - 12)
-    d = min(128, np.amax(loc[1]) + 12)
-    e = max(0, np.amin(loc[2]) - 12)
-    f = min(128, np.amax(loc[2]) + 12)
+    thesh = 12
+    a = max(0, np.amin(loc[0]) - thesh)
+    b = min(128, np.amax(loc[0]) + thesh)
+    c = max(0, np.amin(loc[1]) - thesh)
+    d = min(128, np.amax(loc[1]) + thesh)
+    e = max(0, np.amin(loc[2]) - thesh)
+    f = min(128, np.amax(loc[2]) + thesh)
 
     img1 = np.concatenate((img[a:b, c:d, e:f], binary_mask[a:b, c:d, e:f]), axis=-1)
     return img1, mask[a:b, c:d, e:f]
