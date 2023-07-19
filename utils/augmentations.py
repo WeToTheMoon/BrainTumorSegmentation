@@ -100,7 +100,7 @@ def combine_aug(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
 
 def binary_combine_aug(x: ndarray, y: ndarray) -> tuple[ndarray, ndarray]:
     """
-    Combines the elastic, brightness and rotation deformation augmentations with a 30% of each augmentation being
+    Combines the elastic, brightness and rotation deformation augmentations with a 30% chance of each augmentation being
     applied.
 
     :param x:
