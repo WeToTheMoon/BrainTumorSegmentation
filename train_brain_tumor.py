@@ -6,17 +6,8 @@ from utils.models import attention_brain_tumor_model
 from utils.optimizers import LH_Adam
 
 
-def main():
-    arg_parser = ArgumentParser()
-
-    arg_parser.add_argument("-d", "--dataset_dir",
-                            help="Directory for the training dataset. Should contain the 'train' and 'val' "
-                                 "directories.",
-                            required=True)
-
-    args = arg_parser.parse_args()
-
-    dataset = MRIDataset(cropped_dataset_path=args.dataset_dir)
+def train(dataset_dir: str):
+    dataset = MRIDataset(cropped_dataset_path=dataset_dir)
 
     batch_size = 6
     train_img_datagen = dataset.cropped_train_datagen(batch_size)
@@ -43,4 +34,12 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    arg_parser = ArgumentParser()
+
+    arg_parser.add_argument("-d", "--dataset_dir",
+                            help="Directory for the training dataset. Should contain the 'train' and 'val' "
+                                 "directories.",
+                            required=True)
+
+    args = arg_parser.parse_args()
+    train(args.dataset_dir)
