@@ -104,6 +104,32 @@ def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
     return img1, mask[a:b, c:d, e:f]
 
 
+def global_extraction(img: ndarray | list[ndarray], mask: ndarray | list[ndarray]) -> tuple[ndarray, ndarray]:
+    """
+    Crops the image to 48 x 48 x 128 x C.
+
+    :param img:
+    :param mask:
+    """
+    images = []
+    masks = []
+    for i in range(len(img)):
+        img_temp = img[i]
+        mask_temp = mask[i]
+
+        or_r = np.random.randint(0, img_temp.shape[0] - 47)
+        or_c = np.random.randint(0, img_temp.shape[1] - 47)
+        or_d = np.random.randint(0, img_temp.shape[2] - 47)
+        img_temp = img_temp[or_r:or_r + 48, or_c:or_c + 48, or_d:or_d + 48, :]
+        mask_temp = mask_temp[or_r:or_r + 48, or_c:or_c + 48, or_d:or_d + 48, :]
+        images.append(img_temp)
+        masks.append(mask_temp)
+
+    stacked_images = np.stack(images, axis=0)
+    stacked_masks = np.stack(masks, axis=0)
+    return stacked_images, stacked_masks
+
+
 def mask_to_binary_mask(mask: ndarray) -> ndarray:
     """
     Convert the mask to a binary mask by checking the contents of the voxel.
