@@ -479,3 +479,17 @@
 #     img_final = np.argmax(img_final, axis=4)
 #     msk = np.argmax(msk, axis=4)
 #     return img_final, msk, uncertainty
+
+
+
+import numpy as np
+
+image_mask_path_pairs=[(1,2),(2,3),(3,4)]
+
+
+# all_image_paths, all_mask_paths = zip(*image_mask_path_pairs)
+# all_image_paths, all_mask_paths = list(all_image_paths), list(all_mask_paths)
+all_image_paths, all_mask_paths = map(list, zip(*image_mask_path_pairs))
+
+print(all_image_paths, all_mask_paths)
+
