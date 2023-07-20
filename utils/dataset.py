@@ -140,8 +140,8 @@ class MRIDataset:
                 upper_bound = min(batch_end, len(image_mask_path_pairs))
 
                 # Add remove the mask from the image
-                image_batch = np.array([np.load(path)[..., :-1] for path in all_image_paths[batch_start:upper_bound]])
-                mask_batch = np.array([np.load(path) for path in all_mask_paths[batch_start:upper_bound]])
+                image_batch = [np.load(path)[..., :-1] for path in all_image_paths[batch_start:upper_bound]]
+                mask_batch = [np.load(path) for path in all_mask_paths[batch_start:upper_bound]]
 
                 image_batch, mask_batch = global_extraction(image_batch, mask_batch)
                 image_batch, mask_batch = combine_aug(image_batch, mask_batch)
@@ -155,8 +155,8 @@ class MRIDataset:
         if self.cropped_dataset_path is None:
             raise ValueError("The cropped dataset isn't defined")
 
-        all_image_paths = glob(os.path.join(self.binary_dataset_path, "val", "images", "*.npy"))
-        all_mask_paths = glob(os.path.join(self.binary_dataset_path, "val", "masks", "*.npy"))
+        all_image_paths = glob(os.path.join(self.cropped_dataset_path, "val", "images", "*.npy"))
+        all_mask_paths = glob(os.path.join(self.cropped_dataset_path, "val", "masks", "*.npy"))
 
         while True:
             batch_start = 0
@@ -166,8 +166,8 @@ class MRIDataset:
                 upper_bound = min(batch_end, len(all_image_paths))
 
                 # Add remove the mask from the image
-                image_batch = np.array([np.load(path)[..., :-1] for path in all_image_paths[batch_start:upper_bound]])
-                mask_batch = np.array([np.load(path) for path in all_mask_paths[batch_start:upper_bound]])
+                image_batch = [np.load(path)[..., :-1] for path in all_image_paths[batch_start:upper_bound]]
+                mask_batch = [np.load(path) for path in all_mask_paths[batch_start:upper_bound]]
 
                 image_batch, mask_batch = global_extraction(image_batch, mask_batch)
 
