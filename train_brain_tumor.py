@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from keras.callbacks import ModelCheckpoint
 from utils.dataset import MRIDataset
 from utils.loss import log_cosh_dice_loss
 from utils.metric import dice_coef_multilabel, peritumoral_edema, enhancing_tumor, core_tumor
@@ -6,7 +7,7 @@ from utils.models import attention_brain_tumor_model
 from utils.optimizers import LH_Adam
 
 
-def train(dataset_dir: str):
+def train(dataset_dir: str, weights_path: str):
     dataset = MRIDataset(cropped_dataset_path=dataset_dir)
 
     batch_size = 6
@@ -23,12 +24,15 @@ def train(dataset_dir: str):
     model.compile(optimizer=optimizer, loss=log_cosh_dice_loss,
                   metrics=[dice_coef_multilabel, peritumoral_edema, core_tumor, enhancing_tumor])
 
+    checkpoint_callback = ModelCheckpoint(filepath=weights_path, save_weights_only=True, save_best_only=True)
+
     model.fit(x=train_img_datagen,
               steps_per_epoch=steps_per_epoch,
               epochs=500,
               verbose=1,
               validation_data=val_img_datagen,
               validation_steps=val_steps_per_epoch,
+              callbacks=[checkpoint_callback],
               # TODO test that this works. This should function to increase the training speed but might not work if because we infinitely return batches from our datagen
               use_multiprocessing=True)
 
@@ -41,5 +45,9 @@ if __name__ == '__main__':
                                  "directories.",
                             required=True)
 
+    arg_parser.add_argument("-w", "--weights",
+                            help="Path to the model's weights. This is the path of where to save the weights",
+                            required=True)
+
     args = arg_parser.parse_args()
-    train(args.dataset_dir)
+    train(args.dataset_dir, args.weights)

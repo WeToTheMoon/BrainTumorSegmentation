@@ -25,7 +25,7 @@ def train(dataset_dir: str, binary_weights_path: str):
 
     model.compile(optimizer=optimizer, loss=dice_loss_binary, metrics=[dice_coef])
 
-    callback = ModelCheckpoint(filepath=binary_weights_path, save_weights_only=True, save_best_only=True)
+    checkpoint_callback = ModelCheckpoint(filepath=binary_weights_path, save_weights_only=True, save_best_only=True)
 
     model.fit(x=train_img_datagen,
               steps_per_epoch=steps_per_epoch,
@@ -33,7 +33,7 @@ def train(dataset_dir: str, binary_weights_path: str):
               verbose=1,
               validation_data=val_img_datagen,
               validation_steps=val_steps_per_epoch,
-              callbacks=[callback],
+              callbacks=[checkpoint_callback],
               # TODO test that this works. This should function to increase the training speed but might not work if because we infinitely return batches from our datagen
               use_multiprocessing=True)
 
