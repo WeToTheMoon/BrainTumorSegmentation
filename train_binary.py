@@ -29,13 +29,11 @@ def train(dataset_dir: str, binary_weights_path: str):
 
     model.fit(x=train_img_datagen,
               steps_per_epoch=steps_per_epoch,
-              epochs=200,
+              epochs=65,
               verbose=1,
               validation_data=val_img_datagen,
               validation_steps=val_steps_per_epoch,
-              callbacks=[checkpoint_callback],
-              # TODO test that this works. This should function to increase the training speed but might not work if because we infinitely return batches from our datagen
-              use_multiprocessing=True)
+              callbacks=[checkpoint_callback])
 
 
 if __name__ == '__main__':
