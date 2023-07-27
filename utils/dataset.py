@@ -1,9 +1,13 @@
 import numpy as np
+from keras.layers import ELU
 from numpy import ndarray
 from utils.augmentations import combine_aug, binary_combine_aug
 import os
 from glob import glob
-from utils.preprocessing import global_extraction
+from utils.models import binary_model
+from utils.preprocessing import global_extraction, create_dataset_from_patients_directory, \
+    create_binary_dataset_from_dataset, create_cropped_dataset_from_dataset
+from train_binary import train as train_binary_model
 
 
 class MRIDataset:
@@ -11,7 +15,8 @@ class MRIDataset:
     binary_dataset_path: str | None
     cropped_dataset_path: str | None
 
-    def __init__(self, non_cropped_dataset_path: str = None, binary_dataset_path: str = None, cropped_dataset_path: str = None):
+    def __init__(self, non_cropped_dataset_path: str = None, binary_dataset_path: str = None,
+                 cropped_dataset_path: str = None):
         if non_cropped_dataset_path is not None:
             self.non_cropped_dataset_path = os.path.realpath(non_cropped_dataset_path)
             if not os.path.isdir(self.non_cropped_dataset_path):
@@ -184,3 +189,31 @@ class MRIDataset:
         all_val_images = glob(os.path.join(self.cropped_dataset_path, "val", "images", "*.npy"))
 
         return len(all_train_images) // batch_size, len(all_val_images) // batch_size
+
+
+def create_new_dataset(input_dataset_path: str, output_dataset_path: str) -> MRIDataset:
+    non_cropped_dataset_path = os.path.join(output_dataset_path, "data")
+    binary_dataset_path = os.path.join(output_dataset_path, "binary")
+    binary_weights_path = os.path.join(binary_dataset_path, "BinaryWeights.hdf5")
+    cropped_dataset_path = os.path.join(output_dataset_path, "cropped")
+
+    print("Creating NonCropped Dataset From Patient Directory")
+    create_dataset_from_patients_directory(input_dataset_path, non_cropped_dataset_path)
+
+    print("\nCreating Binary Dataset From NonCropped Dataset")
+    create_binary_dataset_from_dataset(non_cropped_dataset_path, binary_dataset_path)
+
+    print("\nTraining the Binary Model using the binary dataset")
+    train_binary_model(binary_dataset_path, binary_weights_path)
+
+    n_channels = 20
+    model = binary_model(128, 128, 128, 4, 1, n_channels, activation=ELU())
+    model.load_weights(binary_weights_path)
+
+    print("\nCreating Cropped Dataset From NonCropped Dataset using the Binary Model")
+    create_cropped_dataset_from_dataset(non_cropped_dataset_path, model, cropped_dataset_path)
+
+    # Validate the shape and content of the MRI dataset
+    return MRIDataset(non_cropped_dataset_path=non_cropped_dataset_path,
+                      binary_dataset_path=binary_dataset_path,
+                      cropped_dataset_path=cropped_dataset_path)
