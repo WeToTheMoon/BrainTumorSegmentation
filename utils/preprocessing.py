@@ -1,4 +1,3 @@
-import ctypes
 import glob
 import os.path
 from numpy import ndarray
@@ -27,6 +26,20 @@ def calc_z_score(img: ndarray) -> ndarray:
                     img[i, j, k] = (img[i, j, k] - avg_pixel_value) / sd_pixel_value
 
     return img
+
+
+def change_mask_shape(mask: ndarray):
+    if mask.shape == (128, 128, 128, 4):
+        raise ValueError(
+            f"Mask shape is already (128, 128, 128, 4)")
+
+    new_mask = np.zeros((128, 128, 128, 4))
+    for i in range(128):
+        for j in range(128):
+            for k in range(128):
+                new_mask[i, j, k, mask[i, j, k]] = 1
+
+    return new_mask
 
 
 def normalize_mri_data(t1: ndarray, t1ce: ndarray, t2: ndarray, flair: ndarray, mask: ndarray) \
@@ -62,6 +75,8 @@ def normalize_mri_data(t1: ndarray, t1ce: ndarray, t2: ndarray, flair: ndarray, 
     mask = mask[56:184, 56:184, 13:141]
 
     data = np.stack([flair, t1ce, t1, t2], axis=3)
+
+    mask = change_mask_shape(mask)
 
     return data, mask
 
@@ -179,7 +194,7 @@ def create_dataset_from_patients_directory(patients_directory: str, output_datas
     # All MRI data from .nii files as (patient_index, image_data, mask_data)
     all_mri_data = []
     print("Loading MRI Data")
-    for patient_index, patient_directory_name in tqdm(enumerate(os.listdir(patients_directory))):
+    for patient_index, patient_directory_name in enumerate(tqdm(os.listdir(patients_directory))):
         patient_path = os.path.join(patients_directory, patient_directory_name)
 
         if os.path.isdir(patient_path):
@@ -196,14 +211,16 @@ def create_dataset_from_patients_directory(patients_directory: str, output_datas
                 elif "_seg." in file:
                     mri_data["mask"] = file
 
-            all_mri_data.append((patient_index, *get_mri_data_from_directory(patient_path, **mri_data)))
+            image, mask = get_mri_data_from_directory(patient_path, **mri_data)
+            all_mri_data.append((patient_index, image, mask))
 
+    print("Shuffling MRI Data into Train (80%) and Validation (20%) splits")
     np.random.shuffle(all_mri_data)
 
     train_mri_data = all_mri_data[:int(len(all_mri_data) * .80)]
     val_mri_data = all_mri_data[int(len(all_mri_data) * .80):]
 
-    for category, category_mri_data in [("train", train_mri_data), ("val", val_mri_data)]:
+    for category, data in [("train", train_mri_data), ("val", val_mri_data)]:
         output_images_directory = os.path.join(output_dataset_directory, category, "images")
         output_masks_directory = os.path.join(output_dataset_directory, category, "masks")
 
@@ -214,9 +231,35 @@ def create_dataset_from_patients_directory(patients_directory: str, output_datas
             os.makedirs(output_masks_directory)
 
         print(f"Saving {category.title()} MRI Data")
-        for patient_index, image, mask in tqdm(category_mri_data):
+        for patient_index, image, mask in tqdm(data):
             np.save(os.path.join(output_images_directory, f"image-{patient_index}.npy"), image)
             np.save(os.path.join(output_masks_directory, f"mask-{patient_index}.npy"), mask)
+
+
+def create_binary_dataset_from_dataset(input_dataset: str, output_dataset_directory: str) -> None:
+    if not os.path.isdir(input_dataset):
+        raise NotADirectoryError("The dataset directory is not a valid directory")
+
+    for category in ["train", "val"]:
+        input_images_directory = os.path.join(input_dataset, category, "images")
+        input_masks_directory = os.path.join(input_dataset, category, "masks")
+
+        output_images_directory = os.path.join(output_dataset_directory, category, "images")
+        output_masks_directory = os.path.join(output_dataset_directory, category, "masks")
+
+        if not os.path.isdir(output_masks_directory):
+            os.makedirs(output_masks_directory)
+
+        print(f"Copying images over for the {category} category")
+        shutil.copytree(input_images_directory, output_images_directory)
+
+        print(f"Converting masks to binary masks for the {category} category")
+        for mask_path in tqdm(glob(os.path.join(input_masks_directory, "*.npy"))):
+            mask = np.load(mask_path)
+
+            binary_mask = mask_to_binary_mask(mask)
+
+            np.save(os.path.join(output_masks_directory, os.path.basename(mask_path)), binary_mask)
 
 
 def create_cropped_dataset_from_dataset(dataset_directory: str, model, output_dataset_directory: str) -> None:
@@ -240,48 +283,19 @@ def create_cropped_dataset_from_dataset(dataset_directory: str, model, output_da
             os.makedirs(output_masks_directory)
 
         print(f"Cropping and saving dataset for the {category} category")
-        for img_path, mask_path in tqdm(zip(all_images, all_masks)):
+        skipped = []
+        for img_path, mask_path in tqdm(zip(all_images, all_masks), total=len(all_images)):
             img_data = np.load(img_path)
             mask_data = np.load(mask_path)
 
             cropped_image, cropped_mask = roi_crop(img_data, mask_data, model)
 
+            if any([dimension < 48 for dimension in cropped_image.shape[:-1]]) or any([dimension < 48 for dimension in cropped_image.shape[:-1]]):
+                skipped.append([os.path.basename(img_path), cropped_image.shape, os.path.basename(mask_path), cropped_mask.shape])
+                continue
+
             np.save(os.path.join(output_images_directory, os.path.basename(img_path)), cropped_image)
             np.save(os.path.join(output_masks_directory, os.path.basename(mask_path)), cropped_mask)
 
-
-def create_binary_dataset_from_dataset(input_dataset: str, output_dataset_directory: str) -> None:
-    if not os.path.isdir(input_dataset):
-        raise NotADirectoryError("The dataset directory is not a valid directory")
-
-    try:
-        is_admin = (os.getuid() == 0)
-    except AttributeError:
-        is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
-
-    if not is_admin and os.name == "nt":
-        raise PermissionError("Creating the binary dataset uses SymLinks so the script must be run as an admin")
-
-    for category in ["train", "val"]:
-        if not os.path.isdir(os.path.join(output_dataset_directory, category)):
-            os.makedirs(os.path.join(output_dataset_directory, category))
-
-        # Create a symlink for the images because they don't change
-        os.symlink(os.path.realpath(os.path.join(input_dataset, category, "images")),
-                   os.path.realpath(os.path.join(output_dataset_directory, category, "images")),
-                   target_is_directory=True)
-
-        output_masks_directory = os.path.join(output_dataset_directory, category, "masks")
-        if not os.path.isdir(output_masks_directory):
-            os.makedirs(output_masks_directory)
-
-        all_masks = glob(os.path.join(input_dataset, category, 'masks', "*.npy"))
-
-        print(f"Converting masks to binary masks for the {category} category")
-        for mask_path in tqdm(all_masks):
-            mask_data = np.load(mask_path)
-
-            binary_mask_data = mask_to_binary_mask(mask_data)
-
-            np.save(os.path.join(output_masks_directory, os.path.basename(mask_path)),
-                    binary_mask_data)
+        for img_name, img_shape, mask_name, mask_shape in skipped:
+            print(f"Skipped Cropped Data: {img_name}:{img_shape}, {mask_name}:{mask_shape}")
