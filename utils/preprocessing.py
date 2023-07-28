@@ -194,7 +194,7 @@ def create_dataset_from_patients_directory(patients_directory: str, output_datas
     # All MRI data from .nii files as (patient_index, image_data, mask_data)
     all_mri_data = []
     print("Loading MRI Data")
-    for patient_index, patient_directory_name in enumerate(tqdm(os.listdir(patients_directory))):
+    for patient_directory_name in (tqdm(os.listdir(patients_directory))):
         patient_path = os.path.join(patients_directory, patient_directory_name)
 
         if os.path.isdir(patient_path):
@@ -210,7 +210,8 @@ def create_dataset_from_patients_directory(patients_directory: str, output_datas
                     mri_data["flair"] = file
                 elif "_seg." in file:
                     mri_data["mask"] = file
-
+            # Extract the patient's id from the directory name
+            patient_index = patient_directory_name[-5:]
             image, mask = get_mri_data_from_directory(patient_path, **mri_data)
             all_mri_data.append((patient_index, image, mask))
 
