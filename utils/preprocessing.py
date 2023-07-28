@@ -187,6 +187,15 @@ def decompress_patient_folders(patient_folders_directory: str, delete_archives=T
                 os.remove(archive_path)
 
 
+def random_train_test_split(data: list, train_split=0.8) -> tuple[list, list]:
+    if train_split >= 1:
+        raise ValueError("Train Split has to be less than 1")
+
+    np.random.shuffle(data)
+    data_len = len(data)
+
+    return data[:int(data_len * train_split)], data[int(data_len * train_split):]
+
 def create_dataset_from_patients_directory(patients_directory: str, output_dataset_directory: str) -> None:
     if not os.path.isdir(patients_directory):
         raise NotADirectoryError("The patients directory is not a valid directory")
@@ -210,16 +219,14 @@ def create_dataset_from_patients_directory(patients_directory: str, output_datas
                     mri_data["flair"] = file
                 elif "_seg." in file:
                     mri_data["mask"] = file
+
             # Extract the patient's id from the directory name
             patient_index = patient_directory_name[-5:]
             image, mask = get_mri_data_from_directory(patient_path, **mri_data)
             all_mri_data.append((patient_index, image, mask))
 
     print("Shuffling MRI Data into Train (80%) and Validation (20%) splits")
-    np.random.shuffle(all_mri_data)
-
-    train_mri_data = all_mri_data[:int(len(all_mri_data) * .80)]
-    val_mri_data = all_mri_data[int(len(all_mri_data) * .80):]
+    train_mri_data, val_mri_data = random_train_test_split(all_mri_data)
 
     for category, data in [("train", train_mri_data), ("val", val_mri_data)]:
         output_images_directory = os.path.join(output_dataset_directory, category, "images")
