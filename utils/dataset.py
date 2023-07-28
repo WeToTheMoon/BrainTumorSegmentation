@@ -217,3 +217,26 @@ def create_new_dataset(input_dataset_path: str, output_dataset_path: str) -> MRI
     return MRIDataset(non_cropped_dataset_path=non_cropped_dataset_path,
                       binary_dataset_path=binary_dataset_path,
                       cropped_dataset_path=cropped_dataset_path)
+
+
+def generate_train_test_split_lists(dataset_name: str, dataset_path: str) -> None:
+    for subdirectory in ["train/images", "train/masks", "val/images", "val/masks"]:
+        subdirectory_path = os.path.join(dataset_name, subdirectory)
+        if not os.path.isdir(subdirectory_path):
+            raise FileNotFoundError(f"Unable to find the subdirectory {subdirectory}")
+        elif len(glob(os.path.join(subdirectory_path, "*.npy"))) == 0:
+            raise FileNotFoundError(f"The {subdirectory} subdirectory is data (when looking for .npy files)")
+
+    with open(os.path.join(dataset_path, "splits", "train_files.txt"), "w") as train_file:
+        for img_name in os.path.join(os.path.join(dataset_name, "train/images")):
+            patient_index = img_name[7:]
+            filled_index = str(patient_index).zfill(5)
+
+            train_file.write(f"{dataset_name}_{filled_index}\n")
+
+    with open(os.path.join(dataset_path, "splits", "val_files.txt"), "w") as val_file:
+        for img_name in os.path.join(os.path.join(dataset_name, "val/images")):
+            patient_index = img_name[7:]
+            filled_index = str(patient_index).zfill(5)
+
+            val_file.write(f"{dataset_name}_{filled_index}\n")
