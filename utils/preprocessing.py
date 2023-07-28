@@ -196,6 +196,35 @@ def random_train_test_split(data: list, train_split=0.8) -> tuple[list, list]:
 
     return data[:int(data_len * train_split)], data[int(data_len * train_split):]
 
+
+def create_split_from_lists(data: list, train_files_list_path: str, val_files_list_path: str) -> tuple[list, list]:
+    train_data = []
+    with open(train_files_list_path, "r") as train_files_list:
+        for file_name in train_files_list:
+            patient_index = file_name.strip()[-5:]
+            # Conduct a linear search over the data to find one with the same id. Remove it from list as there is guaranteed to be only one instance.
+            for i in range(len(data)):
+                if data[i][0] == patient_index:
+                    train_data.append(data.pop(i))
+                    break
+            else:
+                raise ValueError(f"Data didn't contain a patient with id: {patient_index}")
+
+    val_data = []
+    with open(val_files_list_path, "r") as val_files_list:
+        for file_name in val_files_list:
+            patient_index = file_name.strip()[-5:]
+            # Conduct a linear search over the data to find one with the same id. Remove it from list as there is guaranteed to be only one instance.
+            for i in range(len(data)):
+                if data[i][0] == patient_index:
+                    val_data.append(data.pop(i))
+                    break
+            else:
+                raise ValueError(f"Data didn't contain a patient with id: {patient_index}")
+
+    return train_data, val_data
+
+
 def create_dataset_from_patients_directory(patients_directory: str, output_dataset_directory: str) -> None:
     if not os.path.isdir(patients_directory):
         raise NotADirectoryError("The patients directory is not a valid directory")
