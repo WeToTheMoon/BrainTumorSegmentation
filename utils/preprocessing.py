@@ -232,22 +232,25 @@ def create_dataset_from_patients_directory(patients_directory: str, output_datas
     # All MRI data from .nii files as (patient_index, image_data, mask_data)
     all_mri_data = []
     print("Loading MRI Data")
-    for patient_directory_name in (tqdm(os.listdir(patients_directory))):
+    for patient_directory_name in tqdm(os.listdir(patients_directory)):
         patient_path = os.path.join(patients_directory, patient_directory_name)
 
         if os.path.isdir(patient_path):
             mri_data = {}
-            for file in os.listdir(patient_path):
-                if "_t1." in file:
-                    mri_data["t1"] = file
-                elif "_t1ce." in file:
-                    mri_data["t1ce"] = file
-                elif "_t2." in file:
-                    mri_data["t2"] = file
-                elif "_flair." in file:
-                    mri_data["flair"] = file
-                elif "_seg." in file:
-                    mri_data["mask"] = file
+            for file_name in os.listdir(patient_path):
+                if file_name.endswith(".gz"):
+                    raise TypeError("The MRI modality files are still compressed, uncompress them first")
+
+                if "_t1." in file_name:
+                    mri_data["t1"] = file_name
+                elif "_t1ce." in file_name:
+                    mri_data["t1ce"] = file_name
+                elif "_t2." in file_name:
+                    mri_data["t2"] = file_name
+                elif "_flair." in file_name:
+                    mri_data["flair"] = file_name
+                elif "_seg." in file_name:
+                    mri_data["mask"] = file_name
 
             # Extract the patient's id from the directory name
             patient_index = patient_directory_name[-5:]
