@@ -5,9 +5,9 @@ def dice_coef(y_true, y_pred, smooth=1):
     """
     Takes the TRUE and PRED and returns the dice score.
 
-    :param smooth:
     :param y_true:
     :param y_pred:
+    :param smooth:
     """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)

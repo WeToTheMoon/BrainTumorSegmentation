@@ -14,7 +14,7 @@ def calc_z_score(img: ndarray) -> ndarray:
     Standardize the image data using the zscore (z = (x-μ)/σ).
 
     :param img: Image data with shape components of (width, height, depth).
-    :return:
+    :return: standardized image.
     """
     avg_pixel_value = np.sum(img) / np.count_nonzero(img)
     sd_pixel_value = np.std(img[np.nonzero(img)])
@@ -29,6 +29,12 @@ def calc_z_score(img: ndarray) -> ndarray:
 
 
 def change_mask_shape(mask: ndarray):
+    """
+    Reshape mask to dimensions of 128 x 128 x 128 x 4.
+
+    :param mask: Mask data to reshape.
+    :return: reshaped mask.
+    """
     if mask.shape == (128, 128, 128, 4):
         raise ValueError(
             f"Mask shape is already (128, 128, 128, 4)")
@@ -47,14 +53,13 @@ def normalize_mri_data(t1: ndarray, t1ce: ndarray, t2: ndarray, flair: ndarray, 
     """
     Normalize the MRI data from the dataset using the z-score of the MRI data.
 
-    :param t1: T1-Weighted MRI data
-    :param t1ce: T1-Weighted Contrast Enhanced MRI data
-    :param t2: T2-Weighted MRI data
-    :param flair: Flair MRI data
-    :param mask: Segmented mask data
-    :return: Stacked MRI data and segmented mask data
+    :param t1: T1-Weighted MRI data.
+    :param t1ce: T1-Weighted Contrast Enhanced MRI data.
+    :param t2: T2-Weighted MRI data.
+    :param flair: Flair MRI data.
+    :param mask: Segmented mask data.
+    :return: Stacked MRI data and segmented mask data.
     """
-
     t2 = t2[56:184, 56:184, 13:141]
     t2 = t2.reshape(-1, t2.shape[-1]).reshape(t2.shape)
     t2 = calc_z_score(t2)
@@ -83,6 +88,17 @@ def normalize_mri_data(t1: ndarray, t1ce: ndarray, t2: ndarray, flair: ndarray, 
 
 def get_mri_data_from_directory(patient_directory: str, t1: str, t1ce: str, t2: str, flair: str, mask: str) \
         -> type[ndarray, ndarray]:
+    """
+    Load MRI data from .nii files in a patient directory.
+
+    :param patient_directory: parent patient directory.
+    :param t1: t1 .nii file.
+    :param t1ce: t1ce .nii file.
+    :param t2: t2 .nii file.
+    :param flair: flair .nii file.
+    :param mask: mask .nii file.
+    :return: normalized MRI data (stacked MRI data, mask data).
+    """
     t1_data = nib.load(os.path.join(patient_directory, t1)).get_fdata()
     t1ce_data = nib.load(os.path.join(patient_directory, t1ce)).get_fdata()
     t2_data = nib.load(os.path.join(patient_directory, t2)).get_fdata()
@@ -96,10 +112,10 @@ def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
     """
     Crop the image and mask using the binary mask model.
 
-    :param img: image to crop
-    :param mask: mask to crop
+    :param img: image to crop.
+    :param mask: mask to crop.
     :param model: model to create the binary mask from the image.
-    :return:
+    :return: cropped image and mask.
     """
     img_input = np.expand_dims(img, axis=0)
 
@@ -107,13 +123,13 @@ def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
     binary_mask = binary_mask[0, :, :, :, 0]
     binary_mask = np.expand_dims(binary_mask, -1)
     loc = np.where(binary_mask == 1)
-    thesh = 12
-    a = max(0, np.amin(loc[0]) - thesh)
-    b = min(128, np.amax(loc[0]) + thesh)
-    c = max(0, np.amin(loc[1]) - thesh)
-    d = min(128, np.amax(loc[1]) + thesh)
-    e = max(0, np.amin(loc[2]) - thesh)
-    f = min(128, np.amax(loc[2]) + thesh)
+    threshold = 12
+    a = max(0, np.amin(loc[0]) - threshold)
+    b = min(128, np.amax(loc[0]) + threshold)
+    c = max(0, np.amin(loc[1]) - threshold)
+    d = min(128, np.amax(loc[1]) + threshold)
+    e = max(0, np.amin(loc[2]) - threshold)
+    f = min(128, np.amax(loc[2]) + threshold)
 
     img1 = np.concatenate((img[a:b, c:d, e:f], binary_mask[a:b, c:d, e:f]), axis=-1)
     return img1, mask[a:b, c:d, e:f]
@@ -121,10 +137,10 @@ def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
 
 def global_extraction(img: ndarray | list[ndarray], mask: ndarray | list[ndarray]) -> tuple[ndarray, ndarray]:
     """
-    Crops the image to 48 x 48 x 128 x C.
+    Crops the image to 48 x 48 x 48 x C.
 
-    :param img:
-    :param mask:
+    :param img: img data.
+    :param mask: mask data.
     """
     images = []
     masks = []
@@ -149,8 +165,8 @@ def mask_to_binary_mask(mask: ndarray) -> ndarray:
     """
     Convert the mask to a binary mask by checking the contents of the voxel.
 
-    :param mask: mask to convert
-    :return: a binary version of the mask
+    :param mask: mask to convert.
+    :return: a binary version of the mask.
     """
     new_mask = np.zeros(mask.shape[:-1])
     for i in range(mask.shape[0]):
@@ -163,6 +179,12 @@ def mask_to_binary_mask(mask: ndarray) -> ndarray:
 
 
 def decompress_patient_folders(patient_folders_directory: str, delete_archives=True) -> None:
+    """
+    Decompress all the .gz files in a patient folder.
+
+    :param patient_folders_directory: patients directory.
+    :param delete_archives: whether to delete the residual archive file.
+    """
     if not os.path.isdir(patient_folders_directory):
         raise FileNotFoundError("The patient folders directory is not a valid directory")
 
@@ -188,6 +210,13 @@ def decompress_patient_folders(patient_folders_directory: str, delete_archives=T
 
 
 def random_train_test_split(data: list, train_split=0.8) -> tuple[list, list]:
+    """
+    Create a Test-Train split by randomly shuffling data then splitting by a provided value.
+
+    :param data: data to split.
+    :param train_split: percent of data to allocate as train data.
+    :return: the data split into train and val data.
+    """
     if train_split >= 1:
         raise ValueError("Train Split has to be less than 1")
 
@@ -198,6 +227,14 @@ def random_train_test_split(data: list, train_split=0.8) -> tuple[list, list]:
 
 
 def create_split_from_lists(data: list, train_files_list_path: str, val_files_list_path: str) -> tuple[list, list]:
+    """
+    Create a Test-Train from lists of train and val images.
+
+    :param data: data to split.
+    :param train_files_list_path: text file path with train files.
+    :param val_files_list_path:  text file path with val files.
+    :return: the data split into train and val data.
+    """
     train_data = []
     with open(train_files_list_path, "r") as train_files_list:
         for file_name in train_files_list:
@@ -226,6 +263,12 @@ def create_split_from_lists(data: list, train_files_list_path: str, val_files_li
 
 
 def create_dataset_from_patients_directory(patients_directory: str, output_dataset_directory: str) -> None:
+    """
+    Create uncropped dataset from the parent directory of all the patient directories.
+
+    :param patients_directory: directory of all the patient directories.
+    :param output_dataset_directory: path of where to save the dataset.
+    """
     if not os.path.isdir(patients_directory):
         raise NotADirectoryError("The patients directory is not a valid directory")
 
@@ -277,6 +320,12 @@ def create_dataset_from_patients_directory(patients_directory: str, output_datas
 
 
 def create_binary_dataset_from_dataset(input_dataset: str, output_dataset_directory: str) -> None:
+    """
+    Create the binary dataset from the uncropped dataset.
+
+    :param input_dataset: path of the uncropped dataset.
+    :param output_dataset_directory: path of where to save the binary dataset.
+    """
     if not os.path.isdir(input_dataset):
         raise NotADirectoryError("The dataset directory is not a valid directory")
 
@@ -303,6 +352,13 @@ def create_binary_dataset_from_dataset(input_dataset: str, output_dataset_direct
 
 
 def create_cropped_dataset_from_dataset(dataset_directory: str, model, output_dataset_directory: str) -> None:
+    """
+    Create the cropped dataset from the uncropped dataset using the binary model. The model should already have the weights loaded.
+
+    :param dataset_directory: path of the uncropped dataset.
+    :param model: the binary model with the weights already loaded.
+    :param output_dataset_directory: path of where to save the cropped dataset.
+    """
     if not os.path.isdir(dataset_directory):
         raise NotADirectoryError("The dataset directory is not a valid directory")
 
