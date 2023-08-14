@@ -1,4 +1,5 @@
-from keras.layers import Conv3D, Conv3DTranspose, Input, concatenate, Dense, UpSampling3D
+import tensorflow as tf
+from keras.layers import Conv3D, Conv3DTranspose, Input, concatenate, UpSampling3D, GlobalAveragePooling3D
 from keras.models import Model
 from tensorflow_addons.layers import InstanceNormalization
 
@@ -62,7 +63,10 @@ def double_conv_block(x, n_filters: int, activation):
     x1 = InstanceNormalization()(x1)
     x2 = Conv3D(n_filters, 3, padding="same", activation=activation)(x1)
     x2 = InstanceNormalization()(x2)
-    return x2
+    x3 = GlobalAveragePooling3D(keepdims=True)(x2)
+    x3 = tf.nn.sigmoid(x3 * tf.Variable(initial_value=tf.random.normal(shape=x3.shape[1:]), trainable=True)) * x2
+    x3 = InstanceNormalization()(x3)
+    return x3
 
 
 def multiclass_model(img_height: int, img_width: int,
