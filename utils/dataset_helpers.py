@@ -1,11 +1,13 @@
 import os
 from glob import glob
+
 from keras.layers import ELU
+
+from train_binary import train as train_binary_model
 from utils.dataset import MRIDataset
 from utils.models import binary_model
 from utils.preprocessing import create_dataset_from_patients_directory, create_binary_dataset_from_dataset, \
     create_cropped_dataset_from_dataset
-from train_binary import train as train_binary_model
 
 
 def create_new_dataset(input_dataset_path: str, output_dataset_path: str) -> MRIDataset:

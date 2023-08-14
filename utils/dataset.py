@@ -1,8 +1,10 @@
-import numpy as np
-from numpy import ndarray
-from utils.augmentations import combine_aug, binary_combine_aug
 import os
 from glob import glob
+
+import numpy as np
+from numpy import ndarray
+
+from utils.augmentations import combine_aug, binary_combine_aug
 from utils.preprocessing import global_extraction
 
 

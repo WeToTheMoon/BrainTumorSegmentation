@@ -22,7 +22,11 @@ def dice_coef_multilabel(y_true, y_pred):
     :param y_true:
     :param y_pred:
     """
-    return (core_tumor(y_true, y_pred) + peritumoral_edema(y_true, y_pred) + enhancing_tumor(y_true, y_pred)) / 3
+    return (
+        core_tumor(y_true, y_pred)
+        + peritumoral_edema(y_true, y_pred)
+        + enhancing_tumor(y_true, y_pred)
+    ) / 3
 
 
 def core_tumor(y_true, y_pred):

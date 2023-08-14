@@ -1,5 +1,5 @@
-from tensorflow_addons.optimizers import Lookahead, RectifiedAdam
 from keras.optimizers import Adam
+from tensorflow_addons.optimizers import Lookahead, RectifiedAdam
 
 
 def LH_Adam(learning_rate: float):

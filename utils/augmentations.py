@@ -1,5 +1,5 @@
-import numpy as np
 import elasticdeform
+import numpy as np
 from numpy import ndarray
 from scipy.ndimage import affine_transform
 

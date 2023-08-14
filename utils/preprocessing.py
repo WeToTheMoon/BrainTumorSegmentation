@@ -1,12 +1,13 @@
 import glob
-import os.path
-from numpy import ndarray
-import numpy as np
-import nibabel as nib
-from tqdm import tqdm
-from glob import glob
 import gzip
+import os.path
 import shutil
+from glob import glob
+
+import nibabel as nib
+import numpy as np
+from numpy import ndarray
+from tqdm import tqdm
 
 
 def calc_z_score(img: ndarray) -> ndarray:
