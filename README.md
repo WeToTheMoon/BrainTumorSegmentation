@@ -30,17 +30,18 @@ from utils.dataset_helpers import create_new_dataset
 input_dataset_path = ...
 output_dataset_path = ...
 
+# Already handles training the binary model
 create_new_dataset(input_dataset_path, output_dataset_path)
 ```
 
 ### Results
 After creating the dataset, the multiclass model can be run
 ```
-python train_binary_model --dataset_dir <cropped_dataset_path> --weights <location_to_save_model_weights>
+python train_multiclass --dataset_dir <cropped_dataset_path> --weights <location_to_save_model_weights>
 ```
 or
 ```
-from train_binary_model import train as train_multiclass_model
+from train_multiclass import train as train_multiclass_model
 
 cropped_dataset_path = ...
 multiclass_model_weights = ...

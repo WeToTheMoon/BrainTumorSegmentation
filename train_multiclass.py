@@ -1,9 +1,11 @@
 from argparse import ArgumentParser
+
 from keras.callbacks import ModelCheckpoint
+
 from utils.dataset import MRIDataset
 from utils.loss import log_cosh_dice_loss
 from utils.metric import dice_coef_multilabel, peritumoral_edema, enhancing_tumor, core_tumor
-from utils.models import attention_brain_tumor_model
+from utils.models import attention_multiclass_model
 from utils.optimizers import LH_Adam
 
 
@@ -16,25 +18,23 @@ def train(dataset_dir: str, weights_path: str):
 
     steps_per_epoch, val_steps_per_epoch = dataset.cropped_steps_per_epoch(batch_size)
 
-    model = attention_brain_tumor_model(48, 48, 48, 4, 4)
+    model = attention_multiclass_model(48, 48, 128, 4, 4)
 
     learning_rate = 0.0003
     optimizer = LH_Adam(learning_rate)
 
     model.compile(optimizer=optimizer, loss=log_cosh_dice_loss,
                   metrics=[dice_coef_multilabel, peritumoral_edema, core_tumor, enhancing_tumor])
+    # model.load_weights(weights_path)
 
     checkpoint_callback = ModelCheckpoint(filepath=weights_path, save_weights_only=True, save_best_only=True)
-
     model.fit(x=train_img_datagen,
               steps_per_epoch=steps_per_epoch,
-              epochs=500,
+              epochs=300,
               verbose=1,
               validation_data=val_img_datagen,
               validation_steps=val_steps_per_epoch,
-              callbacks=[checkpoint_callback],
-              # TODO test that this works. This should function to increase the training speed but might not work if because we infinitely return batches from our datagen
-              use_multiprocessing=True)
+              callbacks=[checkpoint_callback])
 
 
 if __name__ == '__main__':

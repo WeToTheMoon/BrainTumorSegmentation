@@ -65,9 +65,9 @@ def double_conv_block(x, n_filters: int, activation):
     return x2
 
 
-def brain_tumor_model(img_height: int, img_width: int,
-                      img_depth: int, img_channels: int,
-                      num_classes: int, activation='relu', channels: int = 32):
+def multiclass_model(img_height: int, img_width: int,
+                     img_depth: int, img_channels: int,
+                     num_classes: int, activation='relu', channels: int = 32):
     inputs = Input((img_height, img_width, img_depth, img_channels))
 
     c1 = double_conv_block(inputs, channels * 2, activation)
@@ -113,9 +113,9 @@ def attention_gate(x, g, channels):
     return x * a
 
 
-def attention_brain_tumor_model(img_height: int, img_width: int,
-                                img_depth: int, img_channels: int,
-                                num_classes: int, activation='relu', channels: int = 32):
+def attention_multiclass_model(img_height: int, img_width: int,
+                               img_depth: int, img_channels: int,
+                               num_classes: int, activation='relu', channels: int = 32):
     if channels == 1:
         classifier = 'sigmoid'
     else:
