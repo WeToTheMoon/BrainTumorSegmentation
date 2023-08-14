@@ -106,8 +106,8 @@ def attention_gate(x, g, channels):
     """
     x1 = Conv3D(channels, (1, 1, 1), strides=(2, 2, 2), padding='same')(x)
     g1 = Conv3D(channels, (1, 1, 1), padding='same')(g)
-    a = x1+g1
-    a = Dense(1, 'relu')(a)
+    a = x1 + g1
+    a = Conv3D(channels, 1, activation='relu')(a)
     a = Conv3D(1, (1, 1, 1), activation='sigmoid')(a)
     a = UpSampling3D((2, 2, 2))(a)
     return x * a
