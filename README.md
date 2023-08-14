@@ -1,7 +1,7 @@
 # BrainTumorSegmentation
 
 ## Introduction
-Code for implementation of preprocessing model published [here]().
+Code for implementation of the model published [here]().
 
 ## Abstract
 Brain tumors are one of the deadliest forms of cancer with a mortality rate of over 80%. A quick and accurate diagnosis is crucial to increase the chance of survival. However, in medical analysis, the manual annotation and segmentation of a brain tumor can be a complicated task. Multiple MRI modalities are typically analyzed as they provide unique information regarding the tumor regions. Although these MRI modalities are helpful for segmenting gliomas, they tend to increase overfitting and computation. This paper proposes a region of interest detection algorithm that is implemented during data preprocessing to locate salient features and remove extraneous MRI data. This decreases the input size, allowing for more aggressive data augmentations and deeper neural networks. Following the preprocessing of the MRI modalities, a fully convolutional autoencoder with soft attention segmented the different brain MRIs. When these deep learning algorithms are implemented in practice, analysts and physicians cannot differentiate between accurate and inaccurate predictions. Subsequently, test time augmentations and an energy-based model were used for voxel-based uncertainty predictions. Experimentation was conducted on the BraTS benchmarks and achieved state-of-the-art segmentation performance. Additionally, qualitative results were used to assess the segmentation models and uncertainty predictions.
