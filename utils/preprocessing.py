@@ -124,36 +124,41 @@ def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
     binary_mask = binary_mask[0, :, :, :, 0]
     binary_mask = np.expand_dims(binary_mask, -1)
     loc = np.where(binary_mask == 1)
-    threshold = 12
-    a = max(0, np.amin(loc[0]) - threshold)
-    b = min(128, np.amax(loc[0]) + threshold)
-    c = max(0, np.amin(loc[1]) - threshold)
-    d = min(128, np.amax(loc[1]) + threshold)
-    e = max(0, np.amin(loc[2]) - threshold)
-    f = min(128, np.amax(loc[2]) + threshold)
 
-    img1 = np.concatenate((img[a:b, c:d, e:f], binary_mask[a:b, c:d, e:f]), axis=-1)
-    return img1, mask[a:b, c:d, e:f]
+    thresh = 12
+    a = max(0, np.amin(loc[0]) - thresh)
+    b = min(128, np.amax(loc[0]) + thresh)
+    c = max(0, np.amin(loc[1]) - thresh)
+    d = min(128, np.amax(loc[1]) + thresh)
+
+    while abs(b - a) < 48:
+        a = max(0, a - 1)
+        b = min(128, b + 1)
+
+    while abs(d - c) < 48:
+        c = max(0, c - 1)
+        d = min(128, d + 1)
+
+    img1 = np.concatenate((img[a:b, c:d], binary_mask[a:b, c:d]), axis=-1)
+    return img1, mask[a:b, c:d]
 
 
-def global_extraction(img: ndarray | list[ndarray], mask: ndarray | list[ndarray]) -> tuple[ndarray, ndarray]:
+def global_extraction(input_images: ndarray | list[ndarray], input_masks: ndarray | list[ndarray]) -> tuple[ndarray, ndarray]:
     """
     Crops the image to 48 x 48 x 48 x C.
 
-    :param img: img data.
-    :param mask: mask data.
+    :param input_images:
+    :param input_masks:
     """
     images = []
     masks = []
-    for i in range(len(img)):
-        img_temp = img[i]
-        mask_temp = mask[i]
+    for img, mask in zip(input_images, input_masks):
+        r = np.random.randint(0, img.shape[0] - 47)
+        c = np.random.randint(0, img.shape[1] - 47)
 
-        or_r = np.random.randint(0, img_temp.shape[0] - 47)
-        or_c = np.random.randint(0, img_temp.shape[1] - 47)
-        or_d = np.random.randint(0, img_temp.shape[2] - 47)
-        img_temp = img_temp[or_r:or_r + 48, or_c:or_c + 48, or_d:or_d + 48, :]
-        mask_temp = mask_temp[or_r:or_r + 48, or_c:or_c + 48, or_d:or_d + 48, :]
+        img_temp = img[r:r + 48, c:c + 48, :, :]
+        mask_temp = mask[r:r + 48, c:c + 48, :, :]
+
         images.append(img_temp)
         masks.append(mask_temp)
 
@@ -380,19 +385,11 @@ def create_cropped_dataset_from_dataset(dataset_directory: str, model, output_da
             os.makedirs(output_masks_directory)
 
         print(f"Cropping and saving dataset for the {category} category")
-        skipped = []
         for img_path, mask_path in tqdm(zip(all_images, all_masks), total=len(all_images)):
             img_data = np.load(img_path)
             mask_data = np.load(mask_path)
 
             cropped_image, cropped_mask = roi_crop(img_data, mask_data, model)
 
-            if any([dimension < 48 for dimension in cropped_image.shape[:-1]]) or any([dimension < 48 for dimension in cropped_image.shape[:-1]]):
-                skipped.append([os.path.basename(img_path), cropped_image.shape, os.path.basename(mask_path), cropped_mask.shape])
-                continue
-
             np.save(os.path.join(output_images_directory, os.path.basename(img_path)), cropped_image)
             np.save(os.path.join(output_masks_directory, os.path.basename(mask_path)), cropped_mask)
-
-        for img_name, img_shape, mask_name, mask_shape in skipped:
-            print(f"Skipped Cropped Data: {img_name}:{img_shape}, {mask_name}:{mask_shape}")
