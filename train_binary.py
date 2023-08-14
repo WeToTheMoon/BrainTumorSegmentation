@@ -1,6 +1,8 @@
 from argparse import ArgumentParser
+
 from keras.callbacks import ModelCheckpoint
 from keras.layers import ELU
+
 from utils.dataset import MRIDataset
 from utils.loss import dice_loss_binary
 from utils.metric import dice_coef
@@ -29,7 +31,7 @@ def train(dataset_dir: str, binary_weights_path: str):
 
     model.fit(x=train_img_datagen,
               steps_per_epoch=steps_per_epoch,
-              epochs=65,
+              epochs=300,
               verbose=1,
               validation_data=val_img_datagen,
               validation_steps=val_steps_per_epoch,
