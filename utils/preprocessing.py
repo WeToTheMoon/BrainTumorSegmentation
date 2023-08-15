@@ -145,7 +145,7 @@ def roi_crop(img: ndarray, mask: ndarray, model) -> tuple[ndarray, ndarray]:
 
 def global_extraction(input_images: ndarray | list[ndarray], input_masks: ndarray | list[ndarray]) -> tuple[ndarray, ndarray]:
     """
-    Crops the image to 48 x 48 x 48 x C.
+    Crops the image to 48 x 48 x 128 x C.
 
     :param input_images:
     :param input_masks:
